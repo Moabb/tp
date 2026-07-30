@@ -18,7 +18,8 @@
     <button class="tab-btn" onclick="switchTab('inscricoes')">📝 Inscrições & Sorteio</button>
     <button class="tab-btn" onclick="switchTab('pista')">🤠 Pista (1ª Passada)</button>
     <button class="tab-btn" onclick="switchTab('placar')">📊 Classificação (Lotes)</button>
-    <button class="tab-btn" onclick="switchTab('semifinal')">🔥 Semifinal / Final</button>
+    <button class="tab-btn" onclick="switchTab('semifinal')">🔥 Semifinal (2ª Passada)</button>
+    <button class="tab-btn" onclick="switchTab('grandefinal')">🏆 Grande Final (3ª Passada)</button>
   </nav>
 
   <main class="container">
@@ -178,12 +179,12 @@
       <div id="leaderboard-results"></div>
     </section>
 
-    <!-- ABA 5: SEMIFINAL / FINAL -->
+    <!-- ABA 5: SEMIFINAL (2ª PASSADA) -->
     <section id="tab-semifinal" class="tab-content">
-      <h2>🔥 Semifinal / Final (2ª Passada)</h2>
+      <h2>🔥 Semifinal (2ª Passada)</h2>
       
       <div class="action-bar card-form">
-        <p>Gere a ordem de entrada da semifinal contendo apenas os <strong>Trios Classificados</strong> na ordem inversa (do pior para o melhor classificado):</p>
+        <p>Gere a ordem de entrada da semifinal contendo apenas os <strong>Trios Classificados</strong> na ordem inversa:</p>
         <button class="btn btn-warning" onclick="gerarOrdemSemifinal()">🔄 Gerar Ordem da Semifinal (Invertida)</button>
       </div>
 
@@ -222,8 +223,56 @@
 
       <hr class="divider">
 
-      <h3>🏆 Resultado Final Acumulado (Soma das 2 Passadas)</h3>
+      <h3>📊 Classificação Acumulada (Soma 2 Passadas)</h3>
       <div id="semi-leaderboard-results"></div>
+    </section>
+
+    <!-- ABA 6: GRANDE FINAL (3ª PASSADA) -->
+    <section id="tab-grandefinal" class="tab-content">
+      <h2>🏆 Grande Final (3ª Passada)</h2>
+
+      <div class="action-bar card-form">
+        <p>Gere a ordem da Grande Final puxando os melhores trios do acumulado da 2ª passada (na ordem inversa do ranking):</p>
+        <button class="btn btn-danger" onclick="gerarOrdemGrandeFinal()">🏆 Gerar Ordem da Grande Final (Invertida)</button>
+      </div>
+
+      <div class="pista-grid" style="margin-top: 20px;">
+        <div class="card-run-info">
+          <h3>Pista Grande Final: <span id="final-run-num">--</span></h3>
+          <div id="final-trio-details">
+            <p><strong>Trio:</strong> <span id="final-trio-names">Nenhum trio na pista</span></p>
+            <p><strong>Acumulado (1ª + 2ª):</strong> <span id="final-trio-acumulado">--</span></p>
+          </div>
+        </div>
+
+        <form id="final-result-form" class="card-form">
+          <h3>Lançamento do Tempo da Grande Final (3ª Passada)</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label>Bois Aportados (0 a 3):</label>
+              <select id="finalBoisPenning" required>
+                <option value="3">3 Bois</option>
+                <option value="2">2 Bois</option>
+                <option value="1">1 Boi</option>
+                <option value="0">0 Bois (Sem Boi)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Tempo (Segundos):</label>
+              <input type="number" step="0.001" id="finalTimeSeconds" placeholder="00.000">
+            </div>
+            <div class="field checkbox-field">
+              <label><input type="checkbox" id="finalIsSAT"> SAT / Sem Tempo</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg">Salvar Resultado Final</button>
+        </form>
+      </div>
+
+      <hr class="divider">
+
+      <h3>🥇 PÓDIO DEFINITIVO DA PROVA (Soma das 3 Passadas)</h3>
+      <div id="grand-final-leaderboard"></div>
     </section>
 
   </main>
