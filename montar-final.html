@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Montagem da Grande Final - Team Penning Pro</title>
+  <style>
+    :root {
+      --bg-dark: #121212; --card-bg: #1e1e1e; --accent-gold: #ffb703;
+      --accent-green: #2a9d8f; --danger-red: #e76f51; --text-light: #f8f9fa;
+      --input-bg: #2b2b2b; --border-color: #333;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+    header h1 { color: var(--accent-gold); font-size: 1.6rem; text-transform: uppercase; }
+
+    .btn-header { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+    .grid-final { display: grid; grid-template-columns: 1fr 380px; gap: 25px; align-items: start; }
+    @media (max-width: 950px) { .grid-final { grid-template-columns: 1fr; } }
+
+    .card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    .card h2 { color: var(--accent-gold); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #ccc; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; background-color: var(--input-bg); border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.95rem; }
+
+    .btn-gerar { width: 100%; padding: 14px; background: var(--accent-green); color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+    .btn-gerar:disabled { background: #555; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🏆 MONTAGEM DA GRANDE FINAL</h1>
+    <div>
+      <a href="./semifinais.html" class="btn-header">🔥 SEMIFINAIS</a>
+      <a href="./admin.html" class="btn-header">⏱️ PROVA (ADMIN)</a>
+      <button class="btn-header" id="btnSair" style="background:#e76f51; color:#fff;">SAIR</button>
+    </div>
+  </header>
+
+  <div class="grid-final">
+    <main>
+      <article class="card">
+        <h2>1. Trios Semifinalistas Qualificados</h2>
+        <div id="containerClassificadas">
+          <p style="color: #888;">Carregando classificados...</p>
+        </div>
+      </article>
+    </main>
+
+    <aside>
+      <article class="card">
+        <h2>2. Configurar Grande Final</h2>
+        <form id="formGerarFinal">
+          <div class="form-group">
+            <label for="inputNomeFinal">Nome da Categoria Final:</label>
+            <input type="text" id="inputNomeFinal" placeholder="Ex: Grande Final - SOMA 3" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputDataFinal">Data da Prova:</label>
+            <input type="date" id="inputDataFinal" required>
+          </div>
+
+          <button type="submit" class="btn-gerar" id="btnGerar">🏆 Gerar Grande Final e Enviar para Admin</button>
+        </form>
+      </article>
+    </aside>
+  </div>
+
+  <script type="module">
+    import { auth, db, collection, addDoc, getDocs, query, where, doc, updateDoc, onAuthStateChanged, signOut } from "./firebase-config.js";
+
+    let classificadosUnicos = [];
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "./index.html";
+        return;
+      }
+      document.getElementById("inputDataFinal").value = new Date().toISOString().split('T')[0];
+      carregarClassificados();
+    });
+
+    async function carregarClassificados() {
+      const container = document.getElementById("containerClassificadas");
+      try {
+        const q = query(
+          collection(db, "classificados"),
+          where("faseOrigem", "==", "SEMIFINAL"),
+          where("status", "==", "PENDENTE")
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          container.innerHTML = '<p style="color: #e76f51;">Nenhum trio pendente para a final.</p>';
+          return;
+        }
+
+        container.innerHTML = "";
+        classificadosUnicos = [];
+
+        snapshot.forEach(docSnap => {
+          const item = { id: docSnap.id, ...docSnap.data() };
+          classificadosUnicos.push(item);
+
+          const divBox = document.createElement("div");
+          divBox.style.cssText = "background: #262626; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #444;";
+          divBox.innerHTML = `
+            <strong>Categoria: ${item.categoria}</strong> - Cadastrado em: ${new Date(item.criadoEm.seconds * 1000).toLocaleDateString()}
+          `;
+          container.appendChild(divBox);
+        });
+
+      } catch (err) {
+        console.error("Erro ao carregar classificados:", err);
+        container.innerHTML = '<p style="color: #e76f51;">Erro ao carregar os dados.</p>';
+      }
+    }
+
+    document.getElementById("formGerarFinal").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (classificadosUnicos.length === 0) {
+        alert("Não há trios classificados pendentes para gerar a final.");
+        return;
+      }
+
+      const nomeFinal = document.getElementById("inputNomeFinal").value.trim();
+      const dataFinal = document.getElementById("inputDataFinal").value;
+
+      try {
+        let contadorSenha = 1;
+        for (const trio of classificadosUnicos) {
+          await addDoc(collection(db, "trios"), {
+            categoria: nomeFinal,
+            categoriaData: dataFinal,
+            fase: "FINAL",
+            senha: contadorSenha,
+            ordemPista: contadorSenha,
+            status: "AGUARDANDO",
+            criadoEm: new Date()
+          });
+
+          await updateDoc(doc(db, "classificados", trio.id), {
+            status: "PROCESSADO_FINAL",
+            processadoEm: new Date()
+          });
+
+          contadorSenha++;
+        }
+
+        alert("🏆 Grande Final configurada com sucesso!");
+        window.location.href = "./admin.html";
+      } catch (err) {
+        console.error("Erro ao gerar final:", err);
+      }
+    });
+
+    document.getElementById("btnSair").addEventListener("click", () => signOut(auth));
+  </script>
+</body>
+</html>
