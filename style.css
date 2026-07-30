@@ -1,16 +1,13 @@
-/* ===================================================
-   ESQUEMA DE CORES: ALTO CONTRASTE (SOL / AO AR LIVRE)
-   =================================================== */
 :root {
-  --bg-color: #ffffff;        /* Branco puro para refletir brilho máximo da tela */
-  --card-bg: #f1f5f9;        /* Cinza claro de alto contraste para separar os cards */
-  --primary: #020617;        /* Azul-preto ultrafundo para o cabeçalho */
-  --primary-light: #1d4ed8;  /* Azul vivo e denso para botões e abas ativas */
-  --success: #15803d;        /* Verde denso e legível sob luz direta */
-  --warning: #b45309;        /* Âmbar escuro de alta visibilidade */
-  --danger: #b91c1c;         /* Vermelho escuro e intenso */
-  --text: #000000;           /* Preto puro para máximo contraste de leitura */
-  --border: #475569;         /* Bordas bem marcadas (evita o "apagamento" no sol) */
+  --bg-color: #f4f6f9;
+  --card-bg: #ffffff;
+  --primary: #1e3a8a;
+  --primary-light: #3b82f6;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --text: #1f2937;
+  --border: #e5e7eb;
 }
 
 body {
@@ -19,59 +16,229 @@ body {
   color: var(--text);
   margin: 0;
   padding: 0;
-  font-weight: 500; /* Leve aumento de peso do texto para facilitar a leitura */
 }
 
-/* Ajuste de Bordas e Inputs para visibilidade no sol */
-.field input, .field select {
-  padding: 0.6rem;
-  border: 2px solid var(--border); /* Bordas mais espessas e visíveis */
-  border-radius: 4px;
-  font-size: 1rem;
-  color: #000000;
-  background-color: #ffffff;
-  font-weight: 600;
+.main-header {
+  background-color: var(--primary);
+  color: #fff;
+  padding: 1.5rem;
+  text-align: center;
 }
 
-.card-form, .card-run-info, .data-table {
-  background: var(--card-bg);
-  border: 2px solid var(--border); /* Garante a divisão visual dos blocos sob reflexo */
-}
+.main-header h1 { margin: 0; font-size: 1.8rem; }
+.main-header p { margin: 0.25rem 0 0 0; opacity: 0.8; }
 
-.data-table th {
-  background: #cbd5e1;
-  color: #000000;
-  font-weight: 800;
-  border-bottom: 2px solid var(--border);
-}
-
-.data-table td {
-  color: #000000;
-  border-bottom: 1px solid var(--border);
-}
-
-/* Abas de Navegação de Alta Visibilidade */
 .nav-tabs {
-  background: #020617;
-  border-bottom: 3px solid var(--primary-light);
+  display: flex;
+  background: #0f172a;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
 }
 
 .tab-btn {
-  color: #ffffff;
-  font-weight: 700;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-.tab-btn.active {
-  color: #ffffff;
-  background: var(--primary-light);
-  outline: 2px solid #ffffff;
+.tab-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.tab-btn.active { color: #fff; background: var(--primary-light); }
+
+.container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
 }
 
-/* Alerta de Troca de Lote sob Luz Solar */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.card-form, .card-run-info {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field { display: flex; flex-direction: column; gap: 0.4rem; }
+.field label { font-size: 0.9rem; font-weight: 600; }
+.field input, .field select {
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.checkbox-field { justify-content: flex-end; }
+.checkbox-field label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+
+.btn {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover { opacity: 0.9; }
+.btn-primary { background: var(--primary-light); color: #fff; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-lg { width: 100%; font-size: 1.1rem; padding: 1rem; }
+
+.divider { border: 0; height: 1px; background: var(--border); margin: 2rem 0; }
+
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+
+.data-table th, .data-table td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th { background: #f8fafc; font-weight: 700; }
+
+.tag-lote {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Alerta de Troca de Gado */
 .alert-banner {
-  background-color: #d97706;
-  color: #000000;
-  border: 3px solid #78350f;
-  font-size: 1.3rem;
-  font-weight: 900;
+  background-color: var(--warning);
+  color: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  animation: pulse 1.5s infinite;
+}
+
+.alert-banner.hidden { display: none; }
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
+.pista-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1.5rem;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 1.5rem;
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.qualified-row { background-color: #f0fdf4 !important; font-weight: 600; }
+.badge-qualified {
+  background: var(--success);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* ===================================================
+   LAYOUT OPERACIONAL DA PISTA (LADO A LADO)
+   =================================================== */
+
+.pista-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Coluna da direita com rolagem própria para manter a tela fixa */
+.sequence-scroll-box {
+  max-height: 520px;
+  overflow-y: auto;
+  border-radius: 8px;
+  padding-right: 5px;
+}
+
+/* Botões de Ação lado a lado (Salvar e SAT Direto) */
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+/* Ajustes para telas menores / tablets */
+@media (max-width: 992px) {
+  .pista-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .sequence-scroll-box {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 576px) {
+  .action-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Botão Especial de Ativação do Painel / Telão */
+.btn-tv {
+  background-color: #6366f1;
+  color: #ffffff;
+  font-weight: bold;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
+}
+
+.btn-tv:hover {
+  background-color: #4f46e5;
+  transform: translateY(-1px);
 }
