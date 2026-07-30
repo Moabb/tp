@@ -97,8 +97,8 @@
         <h3>Sorteio de Ordem por Categoria (Start List)</h3>
         <div class="form-grid" style="align-items: flex-end;">
           <div class="field">
-            <label>Selecione a Categoria para Sortear:</label>
-            <select id="drawCategorySelect">
+            <label>Selecione a Categoria para Visualizar / Sortear:</label>
+            <select id="drawCategorySelect" onchange="onDrawCategoryChange()">
               <option value="Soma 3">Soma 3</option>
               <option value="Amador">Amador</option>
               <option value="Aberto">Aberto</option>
@@ -172,6 +172,9 @@
           <button type="submit" class="btn btn-primary btn-lg">Salvar Resultado & Próximo Trio</button>
         </form>
       </div>
+
+      <!-- SEQUÊNCIA DE TRIOS DA 1ª PASSADA -->
+      <div id="pista-sequence-container"></div>
     </section>
 
     <!-- ABA 4: CLASSIFICAÇÃO DA 1ª PASSADA -->
@@ -251,6 +254,9 @@
         </form>
       </div>
 
+      <!-- SEQUÊNCIA DE TRIOS DA SEMIFINAL -->
+      <div id="semi-sequence-container"></div>
+
       <hr class="divider">
 
       <h3>📊 Resultado da Semifinal (Classificação por Menor Tempo da Etapa)</h3>
@@ -307,6 +313,9 @@
           <button type="submit" class="btn btn-primary btn-lg">Salvar Resultado Final</button>
         </form>
       </div>
+
+      <!-- SEQUÊNCIA DE TRIOS DA GRANDE FINAL -->
+      <div id="final-sequence-container"></div>
 
       <hr class="divider">
 
