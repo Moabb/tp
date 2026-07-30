@@ -45,6 +45,16 @@ window.switchTab = function(tabId) {
   }
 };
 
+window.onSemiCategoryChange = function() {
+  updateSemifinalUI();
+  renderSemifinalLeaderboard();
+};
+
+window.onFinalCategoryChange = function() {
+  updateGrandeFinalUI();
+  renderGrandFinalLeaderboard();
+};
+
 onValue(ref(db, 'config'), (snapshot) => {
   if (snapshot.exists()) {
     state.config = snapshot.val();
@@ -103,11 +113,14 @@ document.getElementById('trio-form').addEventListener('submit', (e) => {
   });
 });
 
+// --- SORTEIO POR CATEGORIA (PRINT 1) ---
 window.gerarStartList = function() {
-  const keys = Object.keys(state.trios);
-  if (keys.length === 0) return alert('Nenhum trio cadastrado!');
+  const selectedCat = document.getElementById('drawCategorySelect').value;
+  const targetKeys = Object.keys(state.trios).filter(k => state.trios[k].category === selectedCat);
 
-  const shuffledKeys = [...keys];
+  if (targetKeys.length === 0) return alert(`Nenhum trio cadastrado para a categoria: ${selectedCat}!`);
+
+  const shuffledKeys = [...targetKeys];
   for (let i = shuffledKeys.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffledKeys[i], shuffledKeys[j]] = [shuffledKeys[j], shuffledKeys[i]];
@@ -118,7 +131,7 @@ window.gerarStartList = function() {
     updates[`trios/${key}/startOrder`] = index + 1;
   });
 
-  update(ref(db), updates).then(() => alert('Sorteio da 1ª Passada realizado!'));
+  update(ref(db), updates).then(() => alert(`Sorteio da Categoria ${selectedCat} realizado com sucesso!`));
 };
 
 function renderStartList() {
@@ -127,6 +140,7 @@ function renderStartList() {
   tbody.innerHTML = '';
 
   const list = Object.values(state.trios).sort((a, b) => {
+    if (a.category !== b.category) return a.category.localeCompare(b.category);
     if (a.startOrder && b.startOrder) return a.startOrder - b.startOrder;
     return a.senha - b.senha;
   });
@@ -146,17 +160,19 @@ function renderStartList() {
   });
 }
 
-// --- PISTA 1ª PASSADA ---
+// --- PISTA 1ª PASSADA (SELEÇÃO DE CATEGORIA - PRINT 2) ---
 function updatePistaUI() {
+  const selectedCat = document.getElementById('pistaCategorySelect')?.value || 'Soma 3';
+
   const sortedTrios = Object.entries(state.trios)
-    .filter(([_, t]) => t.startOrder !== null)
+    .filter(([_, t]) => t.startOrder !== null && t.category === selectedCat)
     .sort((a, b) => a[1].startOrder - b[1].startOrder);
 
   const pending = sortedTrios.find(([_, t]) => !t.result);
 
   if (!pending) {
-    document.getElementById('current-run-num').innerText = "Fim da 1ª Passada";
-    document.getElementById('current-trio-names').innerText = "Todas as corridas foram concluídas.";
+    document.getElementById('current-run-num').innerText = sortedTrios.length > 0 ? "Fim da 1ª Passada" : "--";
+    document.getElementById('current-trio-names').innerText = sortedTrios.length > 0 ? `Todas as corridas de ${selectedCat} foram concluídas.` : "Nenhum trio sorteado nesta categoria.";
     document.getElementById('batch-alert').classList.add('hidden');
     return;
   }
@@ -207,10 +223,10 @@ document.getElementById('run-result-form').addEventListener('submit', (e) => {
   });
 });
 
-function getQualifiedTrios() {
+function getQualifiedTrios(category) {
   const batches = {};
   Object.entries(state.trios).forEach(([key, t]) => {
-    if (t.result) {
+    if (t.result && t.category === category) {
       const bNum = Math.ceil(t.startOrder / state.config.batchSize);
       if (!batches[bNum]) batches[bNum] = [];
       batches[bNum].push({ key, ...t });
@@ -311,10 +327,12 @@ function buildBatchTable(container, title, triosList, topQualifiedLimit) {
   container.appendChild(card);
 }
 
-// --- LÓGICA DA SEMIFINAL (2ª PASSADA) ---
+// --- LÓGICA DA SEMIFINAL (2ª PASSADA - MENOR TEMPO DA ETAPA - PRINT 4) ---
 window.gerarOrdemSemifinal = function() {
-  const qualified = getQualifiedTrios();
-  if (qualified.length === 0) return alert('Nenhum trio classificado!');
+  const selectedCat = document.getElementById('semiCategorySelect').value;
+  const qualified = getQualifiedTrios(selectedCat);
+
+  if (qualified.length === 0) return alert(`Nenhum trio classificado na categoria ${selectedCat}!`);
 
   const inverted = [...qualified].reverse();
 
@@ -324,20 +342,22 @@ window.gerarOrdemSemifinal = function() {
   });
 
   update(ref(db), updates).then(() => {
-    alert(`Ordem da Semifinal gerada com ${inverted.length} trios classificados!`);
+    alert(`Ordem da Semifinal de ${selectedCat} gerada com ${inverted.length} trios!`);
   });
 };
 
 function updateSemifinalUI() {
+  const selectedCat = document.getElementById('semiCategorySelect')?.value || 'Soma 3';
+
   const sortedSemi = Object.entries(state.trios)
-    .filter(([_, t]) => t.semiOrder !== undefined && t.semiOrder !== null)
+    .filter(([_, t]) => t.semiOrder !== undefined && t.semiOrder !== null && t.category === selectedCat)
     .sort((a, b) => a[1].semiOrder - b[1].semiOrder);
 
   const pending = sortedSemi.find(([_, t]) => !t.semiResult);
 
   if (!pending) {
     document.getElementById('semi-run-num').innerText = sortedSemi.length > 0 ? "Fim da Semifinal" : "--";
-    document.getElementById('semi-trio-names').innerText = sortedSemi.length > 0 ? "Todas as passadas foram concluídas!" : "Aguardando geração da ordem.";
+    document.getElementById('semi-trio-names').innerText = sortedSemi.length > 0 ? "Passadas da semifinal concluídas para esta categoria!" : "Aguardando geração da ordem.";
     document.getElementById('semi-trio-pass1').innerText = "--";
     return;
   }
@@ -374,22 +394,18 @@ document.getElementById('semi-result-form').addEventListener('submit', (e) => {
   });
 });
 
-function getSemiLeaderboard() {
+function getSemiLeaderboard(category) {
   const list = [];
   Object.entries(state.trios).forEach(([key, t]) => {
-    if (t.semiOrder && t.semiResult) {
+    if (t.semiOrder && t.semiResult && t.category === category) {
       list.push({ key, ...t });
     }
   });
 
+  // ORDENAÇÃO EXCLUSIVAMENTE PELO MENOR TEMPO / MAIOR NÚMERO DE BOIS DA SEMIFINAL
   return list.sort((a, b) => {
-    const totalBoisA = a.result.bois + a.semiResult.bois;
-    const totalBoisB = b.result.bois + b.semiResult.bois;
-    if (totalBoisA !== totalBoisB) return totalBoisB - totalBoisA;
-
-    const totalTimeA = a.result.time + a.semiResult.time;
-    const totalTimeB = b.result.time + b.semiResult.time;
-    return totalTimeA - totalTimeB;
+    if (a.semiResult.bois !== b.semiResult.bois) return b.semiResult.bois - a.semiResult.bois;
+    return a.semiResult.time - b.semiResult.time;
   });
 }
 
@@ -398,7 +414,8 @@ function renderSemifinalLeaderboard() {
   if (!container) return;
   container.innerHTML = '';
 
-  const sorted = getSemiLeaderboard();
+  const selectedCat = document.getElementById('semiCategorySelect')?.value || 'Soma 3';
+  const sorted = getSemiLeaderboard(selectedCat);
 
   const card = document.createElement('div');
   card.className = 'card-form';
@@ -409,27 +426,26 @@ function renderSemifinalLeaderboard() {
         <tr>
           <th>Colocação</th>
           <th>Trio</th>
-          <th>1ª Passada</th>
-          <th>2ª Passada</th>
-          <th>Total Bois</th>
-          <th>Tempo Somado</th>
+          <th>1ª Passada (Ref)</th>
+          <th>Bois (2ª Passada)</th>
+          <th>Tempo (2ª Passada)</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>`;
 
   sorted.forEach((trio, index) => {
-    const totalBois = trio.result.bois + trio.semiResult.bois;
-    const totalTime = trio.result.time + trio.semiResult.time;
     const pos = index + 1;
+    const isQualified = pos <= state.config.totalFinalists && !trio.semiResult.isSAT;
 
     html += `
-      <tr class="${pos <= state.config.totalFinalists ? 'qualified-row' : ''}">
+      <tr class="${isQualified ? 'qualified-row' : ''}">
         <td><strong>${pos}º Lugar</strong></td>
         <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
         <td>${trio.result.bois}b / ${trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's'}</td>
-        <td>${trio.semiResult.bois}b / ${trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's'}</td>
-        <td><strong>${totalBois} boi(s)</strong></td>
-        <td><strong>${(trio.result.isSAT || trio.semiResult.isSAT) ? 'SAT' : totalTime.toFixed(3) + 's'}</strong></td>
+        <td><strong>${trio.semiResult.bois} boi(s)</strong></td>
+        <td><strong>${trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's'}</strong></td>
+        <td>${isQualified ? '<span class="badge-qualified">CLASSIFICADO FINAL</span>' : '-'}</td>
       </tr>
     `;
   });
@@ -439,12 +455,13 @@ function renderSemifinalLeaderboard() {
   container.appendChild(card);
 }
 
-// --- LÓGICA DA GRANDE FINAL (3ª PASSADA) ---
+// --- LÓGICA DA GRANDE FINAL (3ª PASSADA - MENOR TEMPO DA FINAL - PRINT 5) ---
 window.gerarOrdemGrandeFinal = function() {
-  const semiRanking = getSemiLeaderboard();
-  if (semiRanking.length === 0) return alert('Nenhum trio concluiu a semifinal!');
+  const selectedCat = document.getElementById('finalCategorySelect').value;
+  const semiRanking = getSemiLeaderboard(selectedCat);
 
-  // Seleciona os melhores conforme configurado (ex: Top 10 ou Top 5) e inverte a ordem de largada
+  if (semiRanking.length === 0) return alert(`Nenhum trio concluiu a semifinal na categoria ${selectedCat}!`);
+
   const finalists = semiRanking.slice(0, state.config.totalFinalists);
   const inverted = [...finalists].reverse();
 
@@ -454,31 +471,31 @@ window.gerarOrdemGrandeFinal = function() {
   });
 
   update(ref(db), updates).then(() => {
-    alert(`Ordem da Grande Final gerada com os Top ${finalists.length} trios!`);
+    alert(`Ordem da Grande Final de ${selectedCat} gerada com os Top ${finalists.length} trios!`);
   });
 };
 
 function updateGrandeFinalUI() {
+  const selectedCat = document.getElementById('finalCategorySelect')?.value || 'Soma 3';
+
   const sortedFinal = Object.entries(state.trios)
-    .filter(([_, t]) => t.finalOrder !== undefined && t.finalOrder !== null)
+    .filter(([_, t]) => t.finalOrder !== undefined && t.finalOrder !== null && t.category === selectedCat)
     .sort((a, b) => a[1].finalOrder - b[1].finalOrder);
 
   const pending = sortedFinal.find(([_, t]) => !t.finalResult);
 
   if (!pending) {
     document.getElementById('final-run-num').innerText = sortedFinal.length > 0 ? "Fim da Prova!" : "--";
-    document.getElementById('final-trio-names').innerText = sortedFinal.length > 0 ? "Grande Final concluída com sucesso!" : "Aguardando geração da ordem.";
+    document.getElementById('final-trio-names').innerText = sortedFinal.length > 0 ? "Grande Final concluída para esta categoria!" : "Aguardando geração da ordem.";
     document.getElementById('final-trio-acumulado').innerText = "--";
     return;
   }
 
   const [key, trio] = pending;
-  const accBois = trio.result.bois + trio.semiResult.bois;
-  const accTime = trio.result.time + trio.semiResult.time;
 
   document.getElementById('final-run-num').innerText = `#${trio.finalOrder}`;
   document.getElementById('final-trio-names').innerText = `${trio.r1} | ${trio.r2} | ${trio.r3}`;
-  document.getElementById('final-trio-acumulado').innerText = `${accBois} boi(s) - ${accTime.toFixed(3)}s`;
+  document.getElementById('final-trio-acumulado').innerText = `1ª: ${trio.result.time.toFixed(3)}s | 2ª: ${trio.semiResult.time.toFixed(3)}s`;
 
   document.getElementById('final-result-form').dataset.currentKey = key;
 }
@@ -511,17 +528,13 @@ function renderGrandFinalLeaderboard() {
   if (!container) return;
   container.innerHTML = '';
 
-  const finalTrios = Object.values(state.trios).filter(t => t.finalOrder && t.finalResult);
+  const selectedCat = document.getElementById('finalCategorySelect')?.value || 'Soma 3';
+  const finalTrios = Object.values(state.trios).filter(t => t.finalOrder && t.finalResult && t.category === selectedCat);
 
-  // Ordenação pela SOMA DAS 3 PASSADAS
+  // ORDENAÇÃO EXCLUSIVAMENTE PELO MENOR TEMPO / MAIOR NÚMERO DE BOIS DA GRANDE FINAL (3ª PASSADA)
   finalTrios.sort((a, b) => {
-    const totalBoisA = a.result.bois + a.semiResult.bois + a.finalResult.bois;
-    const totalBoisB = b.result.bois + b.semiResult.bois + b.finalResult.bois;
-    if (totalBoisA !== totalBoisB) return totalBoisB - totalBoisA;
-
-    const totalTimeA = a.result.time + a.semiResult.time + a.finalResult.time;
-    const totalTimeB = b.result.time + b.semiResult.time + b.finalResult.time;
-    return totalTimeA - totalTimeB;
+    if (a.finalResult.bois !== b.finalResult.bois) return b.finalResult.bois - a.finalResult.bois;
+    return a.finalResult.time - b.finalResult.time;
   });
 
   const card = document.createElement('div');
@@ -533,18 +546,15 @@ function renderGrandFinalLeaderboard() {
         <tr>
           <th>Colocação</th>
           <th>Trio</th>
-          <th>1ª Passada</th>
-          <th>2ª Passada</th>
-          <th>3ª Passada</th>
-          <th>Total Bois</th>
-          <th>Tempo Total</th>
+          <th>1ª Passada (Ref)</th>
+          <th>2ª Passada (Ref)</th>
+          <th>Bois (3ª Passada)</th>
+          <th>Tempo (3ª Passada)</th>
         </tr>
       </thead>
       <tbody>`;
 
   finalTrios.forEach((trio, index) => {
-    const totalBois = trio.result.bois + trio.semiResult.bois + trio.finalResult.bois;
-    const totalTime = trio.result.time + trio.semiResult.time + trio.finalResult.time;
     const pos = index + 1;
 
     html += `
@@ -553,9 +563,8 @@ function renderGrandFinalLeaderboard() {
         <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
         <td>${trio.result.bois}b / ${trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's'}</td>
         <td>${trio.semiResult.bois}b / ${trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's'}</td>
-        <td>${trio.finalResult.bois}b / ${trio.finalResult.isSAT ? 'SAT' : trio.finalResult.time.toFixed(3) + 's'}</td>
-        <td><strong>${totalBois} boi(s)</strong></td>
-        <td><strong>${(trio.result.isSAT || trio.semiResult.isSAT || trio.finalResult.isSAT) ? 'SAT' : totalTime.toFixed(3) + 's'}</strong></td>
+        <td><strong>${trio.finalResult.bois} boi(s)</strong></td>
+        <td><strong>${trio.finalResult.isSAT ? 'SAT' : trio.finalResult.time.toFixed(3) + 's'}</strong></td>
       </tr>
     `;
   });

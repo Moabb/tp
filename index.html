@@ -93,9 +93,19 @@
 
       <hr class="divider">
 
-      <div class="action-bar">
-        <h3>Lista de Senhas Vendidas</h3>
-        <button id="btn-draw" class="btn btn-warning" onclick="gerarStartList()">🎲 Realizar Sorteio de Ordem (Start List)</button>
+      <div class="action-bar card-form">
+        <h3>Sorteio de Ordem por Categoria (Start List)</h3>
+        <div class="form-grid" style="align-items: flex-end;">
+          <div class="field">
+            <label>Selecione a Categoria para Sortear:</label>
+            <select id="drawCategorySelect">
+              <option value="Soma 3">Soma 3</option>
+              <option value="Amador">Amador</option>
+              <option value="Aberto">Aberto</option>
+            </select>
+          </div>
+          <button id="btn-draw" class="btn btn-warning" onclick="gerarStartList()">🎲 Realizar Sorteio da Categoria</button>
+        </div>
       </div>
 
       <table class="data-table" id="table-startlist">
@@ -115,6 +125,16 @@
 
     <!-- ABA 3: PISTA / 1ª PASSADA -->
     <section id="tab-pista" class="tab-content">
+      <div class="filter-bar card-form" style="margin-bottom: 20px;">
+        <label><strong>Selecione a Categoria em Pista:</strong>
+          <select id="pistaCategorySelect" onchange="updatePistaUI()">
+            <option value="Soma 3">Soma 3</option>
+            <option value="Amador">Amador</option>
+            <option value="Aberto">Aberto</option>
+          </select>
+        </label>
+      </div>
+
       <div id="batch-alert" class="alert-banner hidden">
         ⚠️ ATENÇÃO: Faltam <span id="runs-left-count">5</span> corridas para a TROCA DE LOTE DE GADO!
       </div>
@@ -164,6 +184,7 @@
             <option value="ALL">Todas as Categorias</option>
             <option value="Soma 3">Soma 3</option>
             <option value="Amador">Amador</option>
+            <option value="Aberto">Aberto</option>
             <option value="Local">Apenas Embutida (Local)</option>
           </select>
         </label>
@@ -184,8 +205,17 @@
       <h2>🔥 Semifinal (2ª Passada)</h2>
       
       <div class="action-bar card-form">
-        <p>Gere a ordem de entrada da semifinal contendo apenas os <strong>Trios Classificados</strong> na ordem inversa:</p>
-        <button class="btn btn-warning" onclick="gerarOrdemSemifinal()">🔄 Gerar Ordem da Semifinal (Invertida)</button>
+        <div class="form-grid" style="align-items: flex-end;">
+          <div class="field">
+            <label>Selecione a Categoria para a Semifinal:</label>
+            <select id="semiCategorySelect" onchange="onSemiCategoryChange()">
+              <option value="Soma 3">Soma 3</option>
+              <option value="Amador">Amador</option>
+              <option value="Aberto">Aberto</option>
+            </select>
+          </div>
+          <button class="btn btn-warning" onclick="gerarOrdemSemifinal()">🔄 Gerar Ordem da Semifinal (Invertida)</button>
+        </div>
       </div>
 
       <div class="pista-grid" style="margin-top: 20px;">
@@ -193,7 +223,7 @@
           <h3>Pista Semifinal: <span id="semi-run-num">--</span></h3>
           <div id="semi-trio-details">
             <p><strong>Trio:</strong> <span id="semi-trio-names">Nenhum trio na pista</span></p>
-            <p><strong>Tempo 1ª Passada:</strong> <span id="semi-trio-pass1">--</span></p>
+            <p><strong>Tempo 1ª Passada (Ref.):</strong> <span id="semi-trio-pass1">--</span></p>
           </div>
         </div>
 
@@ -223,7 +253,7 @@
 
       <hr class="divider">
 
-      <h3>📊 Classificação Acumulada (Soma 2 Passadas)</h3>
+      <h3>📊 Resultado da Semifinal (Classificação por Menor Tempo da Etapa)</h3>
       <div id="semi-leaderboard-results"></div>
     </section>
 
@@ -232,8 +262,17 @@
       <h2>🏆 Grande Final (3ª Passada)</h2>
 
       <div class="action-bar card-form">
-        <p>Gere a ordem da Grande Final puxando os melhores trios do acumulado da 2ª passada (na ordem inversa do ranking):</p>
-        <button class="btn btn-danger" onclick="gerarOrdemGrandeFinal()">🏆 Gerar Ordem da Grande Final (Invertida)</button>
+        <div class="form-grid" style="align-items: flex-end;">
+          <div class="field">
+            <label>Selecione a Categoria para a Grande Final:</label>
+            <select id="finalCategorySelect" onchange="onFinalCategoryChange()">
+              <option value="Soma 3">Soma 3</option>
+              <option value="Amador">Amador</option>
+              <option value="Aberto">Aberto</option>
+            </select>
+          </div>
+          <button class="btn btn-danger" onclick="gerarOrdemGrandeFinal()">🏆 Gerar Ordem da Grande Final (Invertida)</button>
+        </div>
       </div>
 
       <div class="pista-grid" style="margin-top: 20px;">
@@ -241,7 +280,7 @@
           <h3>Pista Grande Final: <span id="final-run-num">--</span></h3>
           <div id="final-trio-details">
             <p><strong>Trio:</strong> <span id="final-trio-names">Nenhum trio na pista</span></p>
-            <p><strong>Acumulado (1ª + 2ª):</strong> <span id="final-trio-acumulado">--</span></p>
+            <p><strong>Ref. Passadas Anteriores:</strong> <span id="final-trio-acumulado">--</span></p>
           </div>
         </div>
 
@@ -271,7 +310,7 @@
 
       <hr class="divider">
 
-      <h3>🥇 PÓDIO DEFINITIVO DA PROVA (Soma das 3 Passadas)</h3>
+      <h3>🥇 PÓDIO DA GRANDE FINAL (Classificação pelo Menor Tempo da Final)</h3>
       <div id="grand-final-leaderboard"></div>
     </section>
 
