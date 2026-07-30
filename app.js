@@ -1,10 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 1. CONFIGURAÇÃO DO FIREBASE (Substitua pelos dados da sua conta)
+// 1. CONFIGURAÇÃO DO FIREBASE (Com a databaseURL corrigida)
 const firebaseConfig = {
   apiKey: "AIzaSyDVZSlNvtLOER3YdotvGi-G7VvDtSQwV7M",
   authDomain: "sistema-team-penning.firebaseapp.com",
+  databaseURL: "https://sistema-team-penning-default-rtdb.firebaseio.com", // <-- ADICIONADO AQUI
   projectId: "sistema-team-penning",
   storageBucket: "sistema-team-penning.firebasestorage.app",
   messagingSenderId: "1025888364244",
