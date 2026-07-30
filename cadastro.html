@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscrição de Trios</title>
+    <style>
+        :root { --bg-dark: #0f172a; --card-bg: #1e293b; --primary: #059669; --accent: #f59e0b; --danger: #ef4444; --text-light: #f8fafc; --text-muted: #94a3b8; --input-bg: #0f172a; --border-color: #334155; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); }
+        header { background-color: #090d16; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+        nav { display: flex; gap: 15px; }
+        nav a { color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; }
+        nav a.active, nav a:hover { color: var(--text-light); background-color: var(--card-bg); }
+        .container { padding: 24px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
+        .card h2 { color: var(--accent); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
+        .form-control { width: 100%; padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-color); color: white; border-radius: 6px; }
+        .btn { padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; background-color: var(--primary); color: white; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+        th { color: var(--accent); background-color: var(--input-bg); }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="color:var(--accent); font-weight:bold;">🤠 TEAM PENNING</div>
+        <nav>
+            <a href="config.html">Parâmetros</a>
+            <a href="cadastro.html" class="active">Inscrições / Trios</a>
+            <a href="admin.html">Mesa do Juiz</a>
+            <a href="painel.html" target="_blank">Painel (TV)</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>CADASTRAR TRIO</h2>
+            <form id="formTrio">
+                <div class="form-group"><label>Nº Senha:</label><input type="number" id="senha" class="form-control" required></div>
+                <div class="form-group"><label>1º Cavaleiro:</label><input type="text" id="c1" class="form-control" required></div>
+                <div class="form-group"><label>2º Cavaleiro:</label><input type="text" id="c2" class="form-control" required></div>
+                <div class="form-group"><label>3º Cavaleiro:</label><input type="text" id="c3" class="form-control" required></div>
+                <div class="form-group"><label>Obs/Haras:</label><input type="text" id="obs" class="form-control"></div>
+                <button type="submit" class="btn">Salvar Inscrição</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>TRIOS INSCRITOS</h2>
+            <table>
+                <thead>
+                    <tr><th>Senha</th><th>Integrantes</th><th>Obs</th><th>Ação</th></tr>
+                </thead>
+                <tbody id="listaTrios"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function renderTabela() {
+            const db = getDB();
+            const tbody = document.getElementById('listaTrios');
+            tbody.innerHTML = db.trios.map(t => `
+                <tr>
+                    <td><b>#${t.senha}</b></td>
+                    <td>${t.c1} / ${t.c2} / ${t.c3}</td>
+                    <td>${t.obs || '-'}</td>
+                    <td><button onclick="deletarTrio('${t.id}')" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Excluir</button></td>
+                </tr>
+            `).join('');
+            
+            // Sugere proxima senha
+            document.getElementById('senha').value = db.trios.length + 1;
+        }
+
+        document.getElementById('formTrio').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const db = getDB();
+            db.trios.push({
+                id: 't_' + Date.now(),
+                senha: parseInt(document.getElementById('senha').value),
+                c1: document.getElementById('c1').value.toUpperCase(),
+                c2: document.getElementById('c2').value.toUpperCase(),
+                c3: document.getElementById('c3').value.toUpperCase(),
+                obs: document.getElementById('obs').value
+            });
+            saveDB(db);
+            this.reset();
+            renderTabela();
+        });
+
+        function deletarTrio(id) {
+            const db = getDB();
+            db.trios = db.trios.filter(t => t.id !== id);
+            saveDB(db);
+            renderTabela();
+        }
+
+        renderTabela();
+    </script>
+</body>
+</html>

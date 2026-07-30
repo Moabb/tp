@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Mesa do Juiz - Team Penning</title>
+    <style>
+        :root { --bg-dark: #0f172a; --card-bg: #1e293b; --primary: #059669; --accent: #f59e0b; --danger: #ef4444; --text-light: #f8fafc; --text-muted: #94a3b8; --input-bg: #0f172a; --border-color: #334155; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); }
+        header { background-color: #090d16; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+        nav { display: flex; gap: 15px; }
+        nav a { color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; }
+        nav a.active, nav a:hover { color: var(--text-light); background-color: var(--card-bg); }
+        .container { padding: 24px; max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
+        .card h2 { color: var(--accent); font-size: 1rem; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+        
+        .juiz-box { background-color: var(--input-bg); border: 2px solid var(--accent); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .trio-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; }
+        .inputs-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .inputs-row input, .inputs-row select { padding: 10px; background-color: var(--card-bg); border: 1px solid var(--border-color); color: white; border-radius: 6px; width: 100%; font-size: 1.1rem; font-weight: bold; }
+        
+        .btn-group { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+        .btn-action { padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+        th { color: var(--accent); background-color: var(--input-bg); }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="color:var(--accent); font-weight:bold;">🤠 TEAM PENNING</div>
+        <nav>
+            <a href="config.html">Parâmetros</a>
+            <a href="cadastro.html">Inscrições / Trios</a>
+            <a href="admin.html" class="active">Mesa do Juiz</a>
+            <a href="painel.html" target="_blank">Painel (TV)</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div>
+            <div class="card">
+                <h2>Sorteio de Pista</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">Gera a ordem aleatória das corridas com base nos trios inscritos.</p>
+                <button onclick="gerarSorteioPista(); renderAdmin();" style="background:var(--accent); color:black; border:none; padding:10px; width:100%; font-weight:bold; border-radius:6px; cursor:pointer;">⚡ Sorteio de Pista</button>
+            </div>
+        </div>
+
+        <div>
+            <!-- Mesa em Andamento -->
+            <div class="juiz-box" id="boxJuiz">
+                <!-- Preenchido via JS -->
+            </div>
+
+            <!-- Lista da Pista -->
+            <div class="card">
+                <h2>Fila de Corridas</h2>
+                <table>
+                    <thead>
+                        <tr><th>Ordem</th><th>Senha</th><th>Integrantes</th><th>Boi</th><th>Curral</th><th>Tempo</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="tabelaCorridas"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function renderAdmin() {
+            const db = getDB();
+            const box = document.getElementById('boxJuiz');
+            const tbody = document.getElementById('tabelaCorridas');
+
+            if (db.corridas.length === 0) {
+                box.innerHTML = `<p style="color:var(--text-muted);">Nenhum sorteio realizado ainda. Clique em "Sorteio de Pista".</p>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Aguardando sorteio...</td></tr>`;
+                return;
+            }
+
+            const currIndex = db.painelAtivo.emAndamentoIndex;
+            const corridaAtual = db.corridas[currIndex];
+            const trioAtual = db.trios.find(t => t.id === corridaAtual.trioId);
+
+            box.innerHTML = `
+                <div style="color:var(--accent); font-weight:bold; font-size:0.8rem;">⏱️ NA PISTA AGORA (ORDEM #${corridaAtual.ordem})</div>
+                <div class="trio-title">${trioAtual ? `${trioAtual.c1} • ${trioAtual.c2} • ${trioAtual.c3}` : 'Desconhecido'}</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">Senha: #${trioAtual.senha} | Haras: ${trioAtual.obs || '-'}</div>
+
+                <div class="inputs-row">
+                    <div>
+                        <label style="font-size:0.75rem; color:var(--text-muted);">Tempo Final (s):</label>
+                        <input type="number" step="0.01" id="inputTempo" placeholder="12.34">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:var(--text-muted);">Boi Sorteado:</label>
+                        <input type="text" id="inputBoi" placeholder="07">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:var(--text-muted);">Curral:</label>
+                        <select id="selectCurral">
+                            <option>3 Bois</option>
+                            <option>2 Bois</option>
+                            <option>1 Boi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-action" style="background:var(--primary);" onclick="salvar('CONCLUIDO')">✓ Confirmar Tempo</button>
+                    <button class="btn-action" style="background:var(--accent); color:black;" onclick="salvar('SAT')">⚠️ S.A.T / N.T.</button>
+                    <button class="btn-action" style="background:var(--danger);" onclick="salvar('DO')">🚫 D.O.</button>
+                </div>
+            `;
+
+            tbody.innerHTML = db.corridas.map((c, i) => {
+                const trio = db.trios.find(t => t.id === c.trioId);
+                const isCurrent = i === currIndex;
+                return `
+                    <tr style="${isCurrent ? 'background:#1e3a8a;' : ''}">
+                        <td><b>#${c.ordem}</b></td>
+                        <td>#${trio ? trio.senha : ''}</td>
+                        <td>${trio ? `${trio.c1} / ${trio.c2} / ${trio.c3}` : ''}</td>
+                        <td>${c.boi || '--'}</td>
+                        <td>${c.curral || '--'}</td>
+                        <td><b>${c.tempo ? c.tempo.toFixed(2) + 's' : '--'}</b></td>
+                        <td><span style="padding:2px 6px; border-radius:4px; font-size:0.75rem; background:${c.status === 'CONCLUIDO' ? 'var(--primary)' : c.status === 'SAT' ? 'var(--accent)' : c.status === 'DO' ? 'var(--danger)' : '#334155'}; color:white;">${c.status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function salvar(status) {
+            const db = getDB();
+            const currIndex = db.painelAtivo.emAndamentoIndex;
+            const tempo = document.getElementById('inputTempo').value;
+            const boi = document.getElementById('inputBoi').value;
+            const curral = document.getElementById('selectCurral').value;
+
+            if (status === 'CONCLUIDO' && (!tempo || parseFloat(tempo) <= 0)) {
+                return alert("Digite um tempo válido!");
+            }
+
+            registrarResultado(currIndex, tempo, boi, curral, status);
+            renderAdmin();
+        }
+
+        renderAdmin();
+    </script>
+</body>
+</html>

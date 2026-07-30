@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Oficial - Team Penning</title>
+    <style>
+        :root { --bg-dark: #090d16; --card-bg: #1e293b; --accent: #f59e0b; --text-light: #f8fafc; --text-muted: #94a3b8; --border-color: #334155; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 12px; margin-bottom: 20px; }
+        .title { font-size: 1.8rem; font-weight: bold; color: var(--accent); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 15px; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--accent); background-color: #0f172a; }
+        .pista-now { background-color: #713f12; color: #fef08a; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="title" id="pNomeEvento">🤠 TEAM PENNING</div>
+        <div style="background:#0284c7; color:white; padding:6px 12px; border-radius:20px; font-weight:bold;">CLASSIFICAÇÃO EM TEMPO REAL</div>
+    </header>
+
+    <div class="grid">
+        <!-- Ranking -->
+        <div class="card">
+            <h3 style="color:#38bdf8; margin-bottom:10px;">🏆 CLASSIFICAÇÃO GERAL</h3>
+            <table>
+                <thead><tr><th>Pos</th><th>Trio</th><th>Tempo</th></tr></thead>
+                <tbody id="rankingBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Fila de Pista -->
+        <div class="card">
+            <h3 style="color:var(--accent); margin-bottom:10px;">⏱️ SEQUÊNCIA DA PISTA</h3>
+            <table>
+                <thead><tr><th>Status</th><th>Senha</th><th>Integrantes</th></tr></thead>
+                <tbody id="filaBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function atualizarPainel() {
+            const db = getDB();
+            document.getElementById('pNomeEvento').innerText = "📺 " + db.competicao.nome;
+
+            // 1. Renderiza Ranking (Ordena por tempo válido)
+            const concluidas = db.corridas
+                .filter(c => c.status === 'CONCLUIDO' && c.tempo)
+                .sort((a, b) => a.tempo - b.tempo);
+
+            const rankBody = document.getElementById('rankingBody');
+            if (concluidas.length === 0) {
+                rankBody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted); text-align:center;">Nenhum tempo registrado</td></tr>`;
+            } else {
+                rankBody.innerHTML = concluidas.map((c, idx) => {
+                    const trio = db.trios.find(t => t.id === c.trioId);
+                    return `
+                        <tr>
+                            <td><b>#${idx + 1}</b></td>
+                            <td>${trio ? `${trio.c1} / ${trio.c2} / ${trio.c3}` : ''}</td>
+                            <td><b style="color:var(--accent);">${c.tempo.toFixed(2)}s</b> (${c.curral})</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // 2. Renderiza Fila da Pista
+            const filaBody = document.getElementById('filaBody');
+            const currIndex = db.painelAtivo.emAndamentoIndex;
+
+            if (db.corridas.length === 0) {
+                filaBody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted); text-align:center;">Aguardando início...</td></tr>`;
+            } else {
+                filaBody.innerHTML = db.corridas.map((c, i) => {
+                    const trio = db.trios.find(t => t.id === c.trioId);
+                    const isNow = i === currIndex;
+                    return `
+                        <tr class="${isNow ? 'pista-now' : ''}">
+                            <td>${isNow ? '🏇 AGORA' : c.status}</td>
+                            <td>#${trio ? trio.senha : ''}</td>
+                            <td>${trio ? `${trio.c1} • ${trio.c2} • ${trio.c3}` : ''}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Ouve atualizações de outras abas em tempo real
+        window.addEventListener('storage', atualizarPainel);
+        // Atualiza ao abrir a página
+        atualizarPainel();
+    </script>
+</body>
+</html>
