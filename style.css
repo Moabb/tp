@@ -181,3 +181,46 @@ body {
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
 }
+
+/* ===================================================
+   LAYOUT OPERACIONAL DA PISTA (LADO A LADO)
+   =================================================== */
+
+.pista-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Coluna da direita com rolagem própria para manter a tela fixa */
+.sequence-scroll-box {
+  max-height: 520px;
+  overflow-y: auto;
+  border-radius: 8px;
+  padding-right: 5px;
+}
+
+/* Botões de Ação lado a lado (Salvar e SAT Direto) */
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+/* Ajustes para telas menores / tablets */
+@media (max-width: 992px) {
+  .pista-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .sequence-scroll-box {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 576px) {
+  .action-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+}
