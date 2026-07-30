@@ -23,12 +23,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJECT_ID.firebaseapp.com",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_PROJECT_ID.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyDVZSlNvtLOER3YdotvGi-G7VvDtSQwV7M",
+  authDomain: "sistema-team-penning.firebaseapp.com",
+  projectId: "sistema-team-penning",
+  storageBucket: "sistema-team-penning.firebasestorage.app",
+  messagingSenderId: "1025888364244",
+  appId: "1:1025888364244:web:d4c5d0582899a855ddbd41"
 };
 
 const app = initializeApp(firebaseConfig);
