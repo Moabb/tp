@@ -16,13 +16,14 @@
   <nav class="nav-tabs">
     <button class="tab-btn active" onclick="switchTab('config')">⚙️ Configurações</button>
     <button class="tab-btn" onclick="switchTab('inscricoes')">📝 Inscrições & Sorteio</button>
-    <button class="tab-btn" onclick="switchTab('pista')">🤠 Pista / Cronômetro</button>
-    <button class="tab-btn" onclick="switchTab('placar')">📊 Classificação (Lotes/Categorias)</button>
+    <button class="tab-btn" onclick="switchTab('pista')">🤠 Pista (1ª Passada)</button>
+    <button class="tab-btn" onclick="switchTab('placar')">📊 Classificação (Lotes)</button>
+    <button class="tab-btn" onclick="switchTab('semifinal')">🔥 Semifinal / Final</button>
   </nav>
 
   <main class="container">
 
-    <!-- ABA 1: CONFIGURAÇÕES DA PROVA -->
+    <!-- ABA 1: CONFIGURAÇÕES -->
     <section id="tab-config" class="tab-content active">
       <h2>Configurações do Evento</h2>
       <form id="config-form" class="card-form">
@@ -48,7 +49,7 @@
       </form>
     </section>
 
-    <!-- ABA 2: INSCRIÇÕES E SORTEIO DE SENHAS -->
+    <!-- ABA 2: INSCRIÇÕES E SORTEIO -->
     <section id="tab-inscricoes" class="tab-content">
       <h2>Inscrição de Trios</h2>
       <form id="trio-form" class="card-form">
@@ -111,7 +112,7 @@
       </table>
     </section>
 
-    <!-- ABA 3: PISTA / CORRIDA -->
+    <!-- ABA 3: PISTA / 1ª PASSADA -->
     <section id="tab-pista" class="tab-content">
       <div id="batch-alert" class="alert-banner hidden">
         ⚠️ ATENÇÃO: Faltam <span id="runs-left-count">5</span> corridas para a TROCA DE LOTE DE GADO!
@@ -119,7 +120,7 @@
 
       <div class="pista-grid">
         <div class="card-run-info">
-          <h3>Corrida Atual: <span id="current-run-num">--</span></h3>
+          <h3>Corrida Atual (1ª Passada): <span id="current-run-num">--</span></h3>
           <p><strong>Lote de Gado Actual:</strong> <span id="current-lote-tag" class="tag-lote">--</span></p>
           <div id="current-trio-details">
             <p><strong>Trio:</strong> <span id="current-trio-names">Nenhum trio na pista</span></p>
@@ -128,7 +129,7 @@
         </div>
 
         <form id="run-result-form" class="card-form">
-          <h3>Lançamento de Tempo</h3>
+          <h3>Lançamento de Tempo (1ª Passada)</h3>
           <div class="form-grid">
             <div class="field">
               <label>Bois Aportados (0 a 3):</label>
@@ -152,9 +153,9 @@
       </div>
     </section>
 
-    <!-- ABA 4: CLASSIFICAÇÃO -->
+    <!-- ABA 4: CLASSIFICAÇÃO DA 1ª PASSADA -->
     <section id="tab-placar" class="tab-content">
-      <h2>Classificação Geral e por Lotes</h2>
+      <h2>Classificação Geral e por Lotes (1ª Passada)</h2>
 
       <div class="filter-bar">
         <label>Filtrar Categoria:
@@ -177,9 +178,56 @@
       <div id="leaderboard-results"></div>
     </section>
 
+    <!-- ABA 5: SEMIFINAL / FINAL -->
+    <section id="tab-semifinal" class="tab-content">
+      <h2>🔥 Semifinal / Final (2ª Passada)</h2>
+      
+      <div class="action-bar card-form">
+        <p>Gere a ordem de entrada da semifinal contendo apenas os <strong>Trios Classificados</strong> na ordem inversa (do pior para o melhor classificado):</p>
+        <button class="btn btn-warning" onclick="gerarOrdemSemifinal()">🔄 Gerar Ordem da Semifinal (Invertida)</button>
+      </div>
+
+      <div class="pista-grid" style="margin-top: 20px;">
+        <div class="card-run-info">
+          <h3>Pista Semifinal: <span id="semi-run-num">--</span></h3>
+          <div id="semi-trio-details">
+            <p><strong>Trio:</strong> <span id="semi-trio-names">Nenhum trio na pista</span></p>
+            <p><strong>Tempo 1ª Passada:</strong> <span id="semi-trio-pass1">--</span></p>
+          </div>
+        </div>
+
+        <form id="semi-result-form" class="card-form">
+          <h3>Lançamento do Tempo da Semifinal (2ª Passada)</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label>Bois Aportados (0 a 3):</label>
+              <select id="semiBoisPenning" required>
+                <option value="3">3 Bois</option>
+                <option value="2">2 Bois</option>
+                <option value="1">1 Boi</option>
+                <option value="0">0 Bois (Sem Boi)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Tempo (Segundos):</label>
+              <input type="number" step="0.001" id="semiTimeSeconds" placeholder="00.000">
+            </div>
+            <div class="field checkbox-field">
+              <label><input type="checkbox" id="semiIsSAT"> SAT / Sem Tempo</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg">Salvar Resultado Semifinal</button>
+        </form>
+      </div>
+
+      <hr class="divider">
+
+      <h3>🏆 Resultado Final Acumulado (Soma das 2 Passadas)</h3>
+      <div id="semi-leaderboard-results"></div>
+    </section>
+
   </main>
 
-  <!-- Firebase Scripts (v10 modular/CDN) -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
