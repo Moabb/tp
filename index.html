@@ -30,8 +30,12 @@
       <form id="config-form" class="card-form">
         <div class="form-grid">
           <div class="field">
-            <label for="batchSize">Tamanho do Lote de Gado (Nº de trios por lote):</label>
-            <input type="number" id="batchSize" value="24" min="1" required>
+            <label for="batchSize">Tamanho do Lote de Gado (Nº de trios por rodada):</label>
+            <input type="number" id="batchSize" value="25" min="1" required>
+          </div>
+          <div class="field">
+            <label for="numBatteries">Quantidade de Baterias (Alternância de Lotes):</label>
+            <input type="number" id="numBatteries" value="2" min="1" required>
           </div>
           <div class="field">
             <label for="alertThreshold">Avisar troca de lote quantas passadas antes?</label>
@@ -39,7 +43,7 @@
           </div>
           <div class="field">
             <label for="qualifiedPerBatch">Classificados por Lote (Top X de cada gado):</label>
-            <input type="number" id="qualifiedPerBatch" value="3" min="1" required>
+            <input type="number" id="qualifiedPerBatch" value="10" min="1" required>
           </div>
           <div class="field">
             <label for="totalFinalists">Vagas Totais para a Semifinal/Final:</label>
@@ -173,7 +177,7 @@
         </form>
       </div>
 
-      <!-- SEQUÊNCIA DE TRIOS DA 1ª PASSADA -->
+      <!-- SEQUÊNCIA DE TRIOS DA 1ª PASSADA (ORDEM SUBINDO) -->
       <div id="pista-sequence-container"></div>
     </section>
 

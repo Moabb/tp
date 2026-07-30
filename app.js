@@ -16,13 +16,27 @@ const db = getDatabase(app);
 
 let state = {
   config: {
-    batchSize: 24,
+    batchSize: 25,
+    numBatteries: 2,
     alertThreshold: 5,
-    qualifiedPerBatch: 3,
+    qualifiedPerBatch: 10,
     totalFinalists: 10
   },
   trios: {}
 };
+
+// HELPER: Calcula o número do Lote considerando a quantidade de baterias
+function calculateBatchNumber(startOrder) {
+  if (!startOrder) return '-';
+  const batchSize = state.config.batchSize || 25;
+  const numBatteries = state.config.numBatteries || 1;
+
+  // Índice do bloco corrido (0, 1, 2, 3...)
+  const blockIndex = Math.floor((startOrder - 1) / batchSize);
+  
+  // Alterna entre 1 e numBatteries
+  return (blockIndex % numBatteries) + 1;
+}
 
 window.switchTab = function(tabId) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -65,6 +79,7 @@ onValue(ref(db, 'config'), (snapshot) => {
   if (snapshot.exists()) {
     state.config = snapshot.val();
     document.getElementById('batchSize').value = state.config.batchSize;
+    document.getElementById('numBatteries').value = state.config.numBatteries || 1;
     document.getElementById('alertThreshold').value = state.config.alertThreshold;
     document.getElementById('qualifiedPerBatch').value = state.config.qualifiedPerBatch;
     document.getElementById('totalFinalists').value = state.config.totalFinalists;
@@ -86,11 +101,12 @@ document.getElementById('config-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const configData = {
     batchSize: parseInt(document.getElementById('batchSize').value),
+    numBatteries: parseInt(document.getElementById('numBatteries').value),
     alertThreshold: parseInt(document.getElementById('alertThreshold').value),
     qualifiedPerBatch: parseInt(document.getElementById('qualifiedPerBatch').value),
     totalFinalists: parseInt(document.getElementById('totalFinalists').value)
   };
-  set(ref(db, 'config'), configData).then(() => alert('Configurações salvas!'));
+  set(ref(db, 'config'), configData).then(() => alert('Configurações salvas com sucesso!'));
 });
 
 document.getElementById('trio-form').addEventListener('submit', (e) => {
@@ -119,7 +135,7 @@ document.getElementById('trio-form').addEventListener('submit', (e) => {
   });
 });
 
-// --- SORTEIO E TABELA POR CATEGORIA (PRINT 1 CORRIGIDO) ---
+// --- SORTEIO E START LIST ---
 window.gerarStartList = function() {
   const selectedCat = document.getElementById('drawCategorySelect').value;
   const targetKeys = Object.keys(state.trios).filter(k => state.trios[k].category === selectedCat);
@@ -150,7 +166,6 @@ function renderStartList() {
 
   const selectedCat = document.getElementById('drawCategorySelect')?.value || 'Soma 3';
 
-  // FILTRA APENAS OS TRIOS DA CATEGORIA SELECIONADA
   const list = Object.values(state.trios)
     .filter(trio => trio.category === selectedCat)
     .sort((a, b) => {
@@ -164,7 +179,7 @@ function renderStartList() {
   }
 
   list.forEach(trio => {
-    const batchNum = trio.startOrder ? Math.ceil(trio.startOrder / state.config.batchSize) : '-';
+    const batchNum = calculateBatchNumber(trio.startOrder);
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${trio.startOrder ? `<strong>#${trio.startOrder}</strong>` : 'Aguardando Sorteio'}</td>
@@ -178,11 +193,10 @@ function renderStartList() {
   });
 }
 
-// --- PISTA 1ª PASSADA (PRINT 2 E PRINT 3 CORRIGIDOS) ---
+// --- PISTA 1ª PASSADA ---
 window.updatePistaUI = function() {
   const selectedCat = document.getElementById('pistaCategorySelect')?.value || 'Soma 3';
 
-  // FILTRAGEM RIGOROSA PELA CATEGORIA SELECIONADA NA PISTA
   const sortedTrios = Object.entries(state.trios)
     .filter(([_, t]) => t.category === selectedCat && t.startOrder !== null)
     .sort((a, b) => a[1].startOrder - b[1].startOrder);
@@ -201,9 +215,10 @@ window.updatePistaUI = function() {
     const runNum = trio.startOrder;
     const batchSize = state.config.batchSize;
 
-    const currentBatchNum = Math.ceil(runNum / batchSize);
-    const nextBatchFirstRun = currentBatchNum * batchSize;
-    const runsLeftInBatch = nextBatchFirstRun - runNum + 1;
+    const currentBatchNum = calculateBatchNumber(runNum);
+    
+    // Alerta de troca de lote baseado na contagem corrida do lote
+    const runsLeftInBatch = batchSize - ((runNum - 1) % batchSize);
 
     document.getElementById('current-run-num').innerText = `#${runNum}`;
     document.getElementById('current-lote-tag').innerText = `Lote ${currentBatchNum}`;
@@ -221,17 +236,20 @@ window.updatePistaUI = function() {
     document.getElementById('run-result-form').dataset.currentKey = key;
   }
 
-  // EXIBE A SEQUÊNCIA DOS TRIOS (MOSTRA PELO MENOS OS 10 PRÓXIMOS)
-  renderPistaSequence(sortedTrios, pending ? pending[0] : null);
+  // EXIBE A SEQUÊNCIA (O trio atual fica no topo; ao salvar o tempo, ele desaparece)
+  renderPistaSequence(sortedTrios);
 };
 
-function renderPistaSequence(sortedTrios, activeKey) {
+function renderPistaSequence(sortedTrios) {
   const container = document.getElementById('pista-sequence-container');
   if (!container) return;
 
+  // FILTRA APENAS OS TRIOS QUE AINDA NÃO CORRERAM (!trio.result)
+  const pendingTrios = sortedTrios.filter(([_, trio]) => !trio.result);
+
   let html = `
     <div class="card-form" style="margin-top: 25px;">
-      <h3>📋 Ordem de Entrada em Pista (Sequência de Trios)</h3>
+      <h3>📋 Ordem de Entrada em Pista (Próximos a Correr)</h3>
       <table class="data-table">
         <thead>
           <tr>
@@ -239,30 +257,25 @@ function renderPistaSequence(sortedTrios, activeKey) {
             <th>Senha</th>
             <th>Integrantes do Trio</th>
             <th>Lote</th>
-            <th>Status / Resultado</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>`;
 
-  if (sortedTrios.length === 0) {
-    html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">Nenhum trio na sequência para esta categoria.</td></tr>`;
+  if (pendingTrios.length === 0) {
+    html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">Nenhum trio pendente para corrida nesta categoria.</td></tr>`;
   } else {
-    sortedTrios.forEach(([key, trio]) => {
-      const isActive = key === activeKey;
-      const isDone = !!trio.result;
-      const batchNum = Math.ceil(trio.startOrder / state.config.batchSize);
-
-      let statusText = '⏳ Aguardando';
-      if (isActive) statusText = '<strong>🤠 EM PISTA</strong>';
-      else if (isDone) statusText = trio.result.isSAT ? '❌ SAT' : `✅ ${trio.result.bois}b / ${trio.result.time.toFixed(3)}s`;
+    pendingTrios.forEach(([key, trio], index) => {
+      const isCurrentInPista = index === 0; // O primeiro pendente é o que ESTÁ NA PISTA
+      const batchNum = calculateBatchNumber(trio.startOrder);
 
       html += `
-        <tr style="${isActive ? 'background-color: #e6f4ff; font-weight: bold;' : isDone ? 'opacity: 0.65;' : ''}">
+        <tr style="${isCurrentInPista ? 'background-color: #e6f4ff; font-weight: bold; border-left: 5px solid #007bff;' : ''}">
           <td><strong>#${trio.startOrder}</strong></td>
           <td>Senha #${trio.senha}</td>
           <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
           <td>Lote ${batchNum}</td>
-          <td>${statusText}</td>
+          <td>${isCurrentInPista ? '🤠 <strong>EM PISTA</strong>' : '⏳ Aguardando'}</td>
         </tr>`;
     });
   }
@@ -297,7 +310,7 @@ function getQualifiedTrios(category) {
   const batches = {};
   Object.entries(state.trios).forEach(([key, t]) => {
     if (t.result && t.category === category) {
-      const bNum = Math.ceil(t.startOrder / state.config.batchSize);
+      const bNum = calculateBatchNumber(t.startOrder);
       if (!batches[bNum]) batches[bNum] = [];
       batches[bNum].push({ key, ...t });
     }
@@ -343,7 +356,7 @@ window.renderLeaderboard = function() {
   if (filterMode === 'BY_BATCH') {
     const batches = {};
     allTrios.forEach(t => {
-      const bNum = Math.ceil(t.startOrder / state.config.batchSize);
+      const bNum = calculateBatchNumber(t.startOrder);
       if (!batches[bNum]) batches[bNum] = [];
       batches[bNum].push(t);
     });
@@ -397,7 +410,7 @@ function buildBatchTable(container, title, triosList, topQualifiedLimit) {
   container.appendChild(card);
 }
 
-// --- LÓGICA DA SEMIFINAL (2ª PASSADA - PRINT 3 E 4 CORRIGIDOS) ---
+// --- SEMIFINAL (2ª PASSADA) ---
 window.gerarOrdemSemifinal = function() {
   const selectedCat = document.getElementById('semiCategorySelect').value;
   const qualified = getQualifiedTrios(selectedCat);
@@ -439,45 +452,41 @@ function updateSemifinalUI() {
     document.getElementById('semi-result-form').dataset.currentKey = key;
   }
 
-  // EXIBE A SEQUÊNCIA DA SEMIFINAL (MOSTRA A LISTA COMPLETA DOS TRIOS)
-  renderSemiSequence(sortedSemi, pending ? pending[0] : null);
+  renderSemiSequence(sortedSemi);
 }
 
-function renderSemiSequence(sortedSemi, activeKey) {
+function renderSemiSequence(sortedSemi) {
   const container = document.getElementById('semi-sequence-container');
   if (!container) return;
 
+  const pendingSemi = sortedSemi.filter(([_, trio]) => !trio.semiResult);
+
   let html = `
     <div class="card-form" style="margin-top: 25px;">
-      <h3>📋 Sequência da Semifinal (Entrada na Pista)</h3>
+      <h3>📋 Sequência da Semifinal (Próximos a Correr)</h3>
       <table class="data-table">
         <thead>
           <tr>
             <th>Ordem Semi</th>
             <th>Trio</th>
             <th>Ref. 1ª Passada</th>
-            <th>Status / Resultado Semi</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>`;
 
-  if (sortedSemi.length === 0) {
-    html += `<tr><td colspan="4" style="text-align:center; padding: 15px;">Nenhum trio na ordem da semifinal. Clique no botão acima para gerar.</td></tr>`;
+  if (pendingSemi.length === 0) {
+    html += `<tr><td colspan="4" style="text-align:center; padding: 15px;">Nenhum trio pendente na semifinal.</td></tr>`;
   } else {
-    sortedSemi.forEach(([key, trio]) => {
-      const isActive = key === activeKey;
-      const isDone = !!trio.semiResult;
-
-      let statusText = '⏳ Aguardando';
-      if (isActive) statusText = '<strong>🤠 EM PISTA</strong>';
-      else if (isDone) statusText = trio.semiResult.isSAT ? '❌ SAT' : `✅ ${trio.semiResult.bois}b / ${trio.semiResult.time.toFixed(3)}s`;
+    pendingSemi.forEach(([key, trio], index) => {
+      const isCurrentInPista = index === 0;
 
       html += `
-        <tr style="${isActive ? 'background-color: #e6f4ff; font-weight: bold;' : isDone ? 'opacity: 0.65;' : ''}">
+        <tr style="${isCurrentInPista ? 'background-color: #e6f4ff; font-weight: bold; border-left: 5px solid #007bff;' : ''}">
           <td><strong>#${trio.semiOrder}</strong></td>
           <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
           <td>${trio.result.bois}b / ${trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's'}</td>
-          <td>${statusText}</td>
+          <td>${isCurrentInPista ? '🤠 <strong>EM PISTA</strong>' : '⏳ Aguardando'}</td>
         </tr>`;
     });
   }
@@ -569,7 +578,7 @@ function renderSemifinalLeaderboard() {
   container.appendChild(card);
 }
 
-// --- LÓGICA DA GRANDE FINAL (3ª PASSADA - PRINTS 3 E 4 CORRIGIDOS) ---
+// --- GRANDE FINAL (3ª PASSADA) ---
 window.gerarOrdemGrandeFinal = function() {
   const selectedCat = document.getElementById('finalCategorySelect').value;
   const semiRanking = getSemiLeaderboard(selectedCat);
@@ -612,17 +621,18 @@ function updateGrandeFinalUI() {
     document.getElementById('final-result-form').dataset.currentKey = key;
   }
 
-  // EXIBE A SEQUÊNCIA DA GRANDE FINAL (MOSTRA A LISTA COMPLETA DOS TRIOS)
-  renderFinalSequence(sortedFinal, pending ? pending[0] : null);
+  renderFinalSequence(sortedFinal);
 }
 
-function renderFinalSequence(sortedFinal, activeKey) {
+function renderFinalSequence(sortedFinal) {
   const container = document.getElementById('final-sequence-container');
   if (!container) return;
 
+  const pendingFinal = sortedFinal.filter(([_, trio]) => !trio.finalResult);
+
   let html = `
     <div class="card-form" style="margin-top: 25px;">
-      <h3>📋 Sequência da Grande Final (Entrada na Pista)</h3>
+      <h3>📋 Sequência da Grande Final (Próximos a Correr)</h3>
       <table class="data-table">
         <thead>
           <tr>
@@ -630,29 +640,24 @@ function renderFinalSequence(sortedFinal, activeKey) {
             <th>Trio</th>
             <th>1ª Passada</th>
             <th>2ª Passada</th>
-            <th>Status / Resultado Final</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>`;
 
-  if (sortedFinal.length === 0) {
-    html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">Nenhum trio na ordem da grande final. Clique no botão acima para gerar.</td></tr>`;
+  if (pendingFinal.length === 0) {
+    html += `<tr><td colspan="5" style="text-align:center; padding: 15px;">Nenhum trio pendente na grande final.</td></tr>`;
   } else {
-    sortedFinal.forEach(([key, trio]) => {
-      const isActive = key === activeKey;
-      const isDone = !!trio.finalResult;
-
-      let statusText = '⏳ Aguardando';
-      if (isActive) statusText = '<strong>🤠 EM PISTA</strong>';
-      else if (isDone) statusText = trio.finalResult.isSAT ? '❌ SAT' : `✅ ${trio.finalResult.bois}b / ${trio.finalResult.time.toFixed(3)}s`;
+    pendingFinal.forEach(([key, trio], index) => {
+      const isCurrentInPista = index === 0;
 
       html += `
-        <tr style="${isActive ? 'background-color: #e6f4ff; font-weight: bold;' : isDone ? 'opacity: 0.65;' : ''}">
+        <tr style="${isCurrentInPista ? 'background-color: #e6f4ff; font-weight: bold; border-left: 5px solid #007bff;' : ''}">
           <td><strong>#${trio.finalOrder}</strong></td>
           <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
           <td>${trio.result ? trio.result.time.toFixed(3) + 's' : '-'}</td>
           <td>${trio.semiResult ? trio.semiResult.time.toFixed(3) + 's' : '-'}</td>
-          <td>${statusText}</td>
+          <td>${isCurrentInPista ? '🤠 <strong>EM PISTA</strong>' : '⏳ Aguardando'}</td>
         </tr>`;
     });
   }
