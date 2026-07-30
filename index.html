@@ -112,8 +112,11 @@
       <hr class="divider">
 
       <div class="action-bar card-form">
-        <h3>Sorteio de Ordem por Categoria (Start List)</h3>
-        <div class="form-grid" style="align-items: flex-end;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <h3 style="margin: 0;">Sorteio de Ordem por Categoria (Start List)</h3>
+          <button class="btn btn-tv" onclick="activarPainel('draw', document.getElementById('drawCategorySelect').value)">📺 Ativar Sorteio no Painel</button>
+        </div>
+        <div class="form-grid" style="align-items: flex-end; margin-top: 15px;">
           <div class="field">
             <label>Selecione a Categoria para Visualizar / Sortear:</label>
             <select id="drawCategorySelect" onchange="onDrawCategoryChange()">
@@ -141,12 +144,13 @@
 
     <!-- ABA 3: PISTA / 1ª PASSADA -->
     <section id="tab-pista" class="tab-content">
-      <div class="filter-bar card-form" style="margin-bottom: 15px;">
+      <div class="filter-bar card-form" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <label><strong>Selecione a Categoria em Pista:</strong>
           <select id="pistaCategorySelect" onchange="updatePistaUI()">
             <option value="">-- Selecione a Categoria --</option>
           </select>
         </label>
+        <button class="btn btn-tv" onclick="activarPainel('pista', document.getElementById('pistaCategorySelect').value)">📺 Ativar Pista no Painel</button>
       </div>
 
       <div id="batch-alert" class="alert-banner hidden">
@@ -206,7 +210,10 @@
 
     <!-- ABA 4: CLASSIFICAÇÃO DA 1ª PASSADA -->
     <section id="tab-placar" class="tab-content">
-      <h2>Classificação Geral e por Lotes (1ª Passada)</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+        <h2>Classificação Geral e por Lotes (1ª Passada)</h2>
+        <button class="btn btn-tv" onclick="activarPainel('placar')">📺 Ativar Classificação no Painel</button>
+      </div>
 
       <div class="filter-bar card-form" style="margin-bottom: 20px;">
         <label>Filtrar Categoria:
@@ -228,15 +235,16 @@
 
     <!-- ABA 5: SEMIFINAL (2ª PASSADA) -->
     <section id="tab-semifinal" class="tab-content">
-      <h2>🔥 Semifinal (2ª Passada)</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+        <h2>🔥 Semifinal (2ª Passada)</h2>
+        <button class="btn btn-tv" onclick="activarPainel('semifinal')">📺 Ativar Semifinal no Painel</button>
+      </div>
       
       <div class="action-bar card-form">
         <h3>Configuração e Agrupamento para Semifinal</h3>
-        <p style="font-size: 0.9em; color: #555;">Selecione uma ou mais etapas classificatórias para agrupar na Semifinal (ex: agrupar <em>Soma 3 Sexta</em> + <em>Soma 3 Sábado</em> + <em>Soma 3 Domingo</em>):</p>
+        <p style="font-size: 0.9em; color: #555;">Selecione uma ou mais etapas classificatórias para agrupar na Semifinal:</p>
         
-        <div id="semi-category-checkboxes" style="display: flex; flex-wrap: wrap; gap: 15px; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-          <!-- Checkboxes de categorias serão inseridos via JavaScript -->
-        </div>
+        <div id="semi-category-checkboxes" style="display: flex; flex-wrap: wrap; gap: 15px; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;"></div>
 
         <div class="form-grid" style="align-items: flex-end; margin-top: 15px;">
           <div class="field">
@@ -249,7 +257,6 @@
 
       <!-- PAINEL OPERACIONAL LADO A LADO -->
       <div class="pista-layout-grid" style="margin-top: 20px;">
-        <!-- Coluna Esquerda -->
         <div class="pista-col-left">
           <div class="card-run-info">
             <h3>Pista Semifinal: <span id="semi-run-num">--</span></h3>
@@ -289,7 +296,6 @@
           </form>
         </div>
 
-        <!-- Coluna Direita -->
         <div class="pista-col-right">
           <div id="semi-sequence-container" class="sequence-scroll-box"></div>
         </div>
@@ -303,7 +309,10 @@
 
     <!-- ABA 6: GRANDE FINAL (3ª PASSADA) -->
     <section id="tab-grandefinal" class="tab-content">
-      <h2>🏆 Grande Final (3ª Passada)</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+        <h2>🏆 Grande Final (3ª Passada)</h2>
+        <button class="btn btn-tv" onclick="activarPainel('grandefinal')">📺 Ativar Grande Final no Painel</button>
+      </div>
 
       <div class="action-bar card-form">
         <h3>Configuração e Premiação da Grande Final</h3>
@@ -324,7 +333,6 @@
 
       <!-- PAINEL OPERACIONAL LADO A LADO -->
       <div class="pista-layout-grid" style="margin-top: 20px;">
-        <!-- Coluna Esquerda -->
         <div class="pista-col-left">
           <div class="card-run-info">
             <h3>Pista Grande Final: <span id="final-run-num">--</span></h3>
@@ -364,7 +372,6 @@
           </form>
         </div>
 
-        <!-- Coluna Direita -->
         <div class="pista-col-right">
           <div id="final-sequence-container" class="sequence-scroll-box"></div>
         </div>

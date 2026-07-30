@@ -28,6 +28,19 @@ let state = {
   trios: {}
 };
 
+// --- FUNÇÃO PARA ACTIVAR TELA NO PAINEL.HTML ---
+window.activarPainel = function(mode, category = '') {
+  const panelData = {
+    mode: mode,
+    category: category || '',
+    updatedAt: Date.now()
+  };
+
+  set(ref(db, 'activePanel'), panelData).then(() => {
+    alert(`📺 Tela ativada no Painel/Telão com sucesso! (Modo: ${mode.toUpperCase()})`);
+  });
+};
+
 // --- FUNÇÃO AUXILIAR: Obter lista de todas as categorias cadastradas ---
 function getUniqueCategories() {
   const categoriesSet = new Set();
@@ -39,17 +52,14 @@ function getUniqueCategories() {
   return Array.from(categoriesSet).sort();
 }
 
-// Atualiza todas as listas suspensas (dropdowns) e datalists do sistema
 function populateCategoryDropdowns() {
   const categories = getUniqueCategories();
 
-  // 1. Datalist para autocompletar Categoria Principal
   const datalist = document.getElementById('categories-datalist');
   if (datalist) {
     datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
   }
 
-  // 2. Select Categoria Embutida
   const catEmbutidaSelect = document.getElementById('catEmbutidaSelect');
   if (catEmbutidaSelect) {
     const currentVal = catEmbutidaSelect.value;
@@ -58,15 +68,10 @@ function populateCategoryDropdowns() {
     catEmbutidaSelect.value = currentVal;
   }
 
-  // 3. Select Sorteio / Start List
   updateSelectOptions('drawCategorySelect', categories);
-  // 4. Select Pista 1ª Passada
   updateSelectOptions('pistaCategorySelect', categories);
-  // 5. Select Placar Classificação
   updateSelectOptions('filterCategory', categories, true);
-  // 6. Checkboxes na Semifinal
   renderSemiCategoryCheckboxes(categories);
-  // 7. Select Grande Final
   updateSelectOptions('finalCategorySelect', categories);
 }
 
@@ -103,7 +108,6 @@ function renderSemiCategoryCheckboxes(categories) {
   `).join('');
 }
 
-// --- HELPER: Calcula o número do Lote considerando a quantidade de baterias ---
 function calculateBatchNumber(startOrder) {
   if (!startOrder) return '-';
   const batchSize = state.config.batchSize || 25;
@@ -809,7 +813,7 @@ function renderFinalSequence(sortedFinal) {
     });
   }
 
-  html += `</tbody></table></div>`;
+  html += `</tbody>mtable></div>`;
   container.innerHTML = html;
 }
 
