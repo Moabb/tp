@@ -4,163 +4,271 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Oficial - Team Penning</title>
-  <link rel="stylesheet" href="style.css">
   <style>
-    /* Estilos Exclusivos para o Telão / Painel de Alta Visibilidade */
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background-color: #0f172a;
-      color: #f8fafc;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .painel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      padding: 20px 30px;
-      border-radius: 12px;
-      border-bottom: 4px solid #3b82f6;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      margin-bottom: 25px;
-    }
-
-    .painel-title {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin: 0;
+      background-color: #0b0f19;
       color: #ffffff;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    /* 1. TOPO: Identificação da Competição e Fase */
+    .header-block {
+      background: #000000;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 10px 20px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+    }
+
+    .header-subtitle {
+      font-size: 1.1rem;
+      margin: 4px 0 0 0;
+      color: #38bdf8;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* 2. TRIO EM PISTA */
+    .pista-block {
+      background: #000000;
+      border: 3px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 20px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+    }
+
+    .pista-label {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #93c5fd;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
-    .painel-badge {
-      background: #3b82f6;
-      color: #fff;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    /* Card Pista Destaque */
-    .pista-hero-card {
-      background: linear-gradient(135deg, #1e3a8a, #1e293b);
-      border: 3px solid #3b82f6;
-      border-radius: 16px;
-      padding: 25px;
-      margin-bottom: 25px;
-      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-    }
-
-    .pista-hero-title {
-      font-size: 1.4rem;
-      color: #93c5fd;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin: 0 0 10px 0;
-    }
-
-    .pista-hero-names {
-      font-size: 2.8rem;
+    .pista-names {
+      font-size: 2.2rem;
       font-weight: 900;
       color: #ffffff;
-      margin: 10px 0;
-      line-height: 1.2;
+      margin: 4px 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
 
-    .pista-hero-meta {
+    .pista-details {
       display: flex;
-      gap: 20px;
-      font-size: 1.4rem;
+      justify-content: center;
+      gap: 30px;
+      font-size: 1.1rem;
       color: #cbd5e1;
       font-weight: 600;
     }
 
-    /* Tabelas do Telão */
-    .painel-table-container {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    }
-
-    .painel-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 1.3rem;
-    }
-
-    .painel-table th {
-      background: #334155;
-      color: #94a3b8;
-      text-transform: uppercase;
-      padding: 14px;
-      text-align: left;
-      font-size: 1.1rem;
-    }
-
-    .painel-table td {
-      padding: 16px 14px;
-      border-bottom: 1px solid #334155;
-      font-weight: 600;
-    }
-
-    .painel-table tr.em-pista {
-      background-color: #1e3a8a;
-      color: #ffffff;
-      font-size: 1.5rem;
-      border-left: 6px solid #60a5fa;
-    }
-
-    .painel-table tr.qualified {
-      background-color: rgba(34, 197, 94, 0.15);
-      border-left: 6px solid #22c55e;
-    }
-
-    .badge-status {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 700;
-      display: inline-block;
-    }
-
-    .status-pista { background: #3b82f6; color: #fff; }
-    .status-wait { background: #475569; color: #cbd5e1; }
-    .status-qualified { background: #16a34a; color: #fff; }
-
-    .grid-2col {
+    /* 3. CENTRO: Classificação das Baterias em Tempo Real (2 Colunas) */
+    .middle-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 25px;
+      gap: 12px;
+      flex: 1;
+      min-height: 0; /* Permite rolar internamente se faltar espaço */
     }
 
-    @media (max-width: 1024px) {
-      .grid-2col { grid-template-columns: 1fr; }
-      .pista-hero-names { font-size: 2rem; }
+    .ranking-box {
+      background: #000000;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .box-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #334155;
+      color: #4ade80;
+      text-align: center;
+    }
+
+    /* 4. BASE: Lista de Trios que vem em seguida */
+    .bottom-block {
+      background: #000000;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Estilos das Tabelas Universais */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1rem;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
+    .data-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #1e293b;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .table-container {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .badge-lote {
+      background: #3b82f6;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .tag-qualified {
+      color: #4ade80;
+      font-weight: 800;
+    }
+
+    /* Mensagem quando não há transmissão */
+    .empty-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 1.8rem;
+      color: #64748b;
+      text-align: center;
     }
   </style>
 </head>
 <body>
 
-  <header class="painel-header">
-    <div>
-      <h1 class="painel-title" id="panel-event-name">🏁 CARREGANDO EVENTO...</h1>
-      <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 1.2rem;" id="panel-subtitle">Painel de Transmissão Oficial</p>
-    </div>
-    <div id="panel-mode-badge" class="painel-badge">AGUARDANDO SINAL</div>
+  <!-- 1. TOPO: Identificação da Competição e Fase -->
+  <header class="header-block">
+    <h1 class="header-title" id="panel-event-title">🏁 TEAM PENNING</h1>
+    <div class="header-subtitle" id="panel-phase-title">AGUARDANDO ATIVAÇÃO DO PAINEL...</div>
   </header>
 
-  <main id="panel-content">
-    <div style="text-align: center; padding: 100px 20px; color: #64748b; font-size: 1.8rem;">
-      📡 Aguardando ativação de tela pelo operador do sistema...
-    </div>
+  <main id="main-content" style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;">
+    
+    <!-- 2. TRIO EM PISTA -->
+    <section class="pista-block">
+      <div class="pista-label">🤠 TRIO EM PISTA AGORA</div>
+      <div class="pista-names" id="current-trio-names">Nenhum trio na pista</div>
+      <div class="pista-details">
+        <span><strong>Ordem:</strong> <span id="current-trio-order">--</span></span>
+        <span><strong>Senha:</strong> <span id="current-trio-senha">--</span></span>
+        <span><strong>Lote de Gado:</strong> <span id="current-trio-lote">--</span></span>
+      </div>
+    </section>
+
+    <!-- 3. CLASSIFICAÇÃO DAS BATERIAS EM TEMPO REAL (2 COLUNAS) -->
+    <section class="middle-grid">
+      <!-- Coluna Esquerda: Bateria / Lote 1 -->
+      <div class="ranking-box">
+        <div class="box-title" id="title-bat-1">📊 Classificação - Lote 1</div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Trio</th>
+                <th>Bois</th>
+                <th>Tempo</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-bat-1">
+              <tr><td colspan="4" style="text-align:center;">Sem registros</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Coluna Direita: Bateria / Lote 2 (ou ranking geral da etapa) -->
+      <div class="ranking-box">
+        <div class="box-title" id="title-bat-2">📊 Classificação - Lote 2</div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Trio</th>
+                <th>Bois</th>
+                <th>Tempo</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-bat-2">
+              <tr><td colspan="4" style="text-align:center;">Sem registros</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. LISTA DE TRIOS QUE VEM EM SEGUIDA -->
+    <section class="bottom-block">
+      <div class="box-title" style="color: #cbd5e1; text-align: left; border-bottom: none; margin-bottom: 4px;">
+        📋 PRÓXIMOS A CORRER (SEQUÊNCIA DA ETAPA)
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ordem</th>
+              <th>Senha</th>
+              <th>Integrantes do Trio</th>
+              <th>Lote</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-next-trios">
+            <tr><td colspan="4" style="text-align:center;">Nenhum trio na fila</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
+  <!-- FIREBASE REALTIME DATABASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -184,358 +292,139 @@
       activePanel: { mode: 'none', category: '' }
     };
 
-    function calculateBatchNumber(startOrder) {
-      if (!startOrder) return '-';
+    // Função utilitária para calcular o lote de gado
+    function getBatchNumber(startOrder) {
+      if (!startOrder) return 1;
       const batchSize = state.config.batchSize || 25;
       const numBatteries = state.config.numBatteries || 1;
       const blockIndex = Math.floor((startOrder - 1) / batchSize);
       return (blockIndex % numBatteries) + 1;
     }
 
+    // Escuta Configurações
     onValue(ref(db, 'config'), (snap) => {
       if (snap.exists()) {
         state.config = snap.val();
-        document.getElementById('panel-event-name').innerText = `🏁 ${state.config.eventName || 'TEAM PENNING'}`;
+        document.getElementById('panel-event-title').innerText = `🏁 ${state.config.eventName || 'TEAM PENNING'}`;
       }
-      renderPanel();
+      renderDashboard();
     });
 
+    // Escuta Trios
     onValue(ref(db, 'trios'), (snap) => {
       state.trios = snap.val() || {};
-      renderPanel();
+      renderDashboard();
     });
 
+    // Escuta o comando de ativação do painel vindo do operador
     onValue(ref(db, 'activePanel'), (snap) => {
       if (snap.exists()) {
         state.activePanel = snap.val();
       }
-      renderPanel();
+      renderDashboard();
     });
 
-    function renderPanel() {
+    function renderDashboard() {
+      const activeCat = state.activePanel.category;
       const mode = state.activePanel.mode || 'none';
-      const badge = document.getElementById('panel-mode-badge');
-      const subtitle = document.getElementById('panel-subtitle');
-      const container = document.getElementById('panel-content');
 
-      if (mode === 'draw') {
-        badge.innerText = '🎲 SORTEIO DE CHAVES';
-        subtitle.innerText = `Ordem de Largada - Categoria: ${state.activePanel.category || 'Geral'}`;
-        renderDrawScreen(container);
-      } else if (mode === 'pista') {
-        badge.innerText = '🤠 PISTA AO VIVO (1ª PASSADA)';
-        subtitle.innerText = `Categoria em Pista: ${state.activePanel.category || 'Geral'}`;
-        renderPistaScreen(container);
-      } else if (mode === 'placar') {
-        badge.innerText = '📊 CLASSIFICAÇÃO DA PASSADA';
-        subtitle.innerText = `Resultados Parciais por Lote de Gado`;
-        renderPlacarScreen(container);
-      } else if (mode === 'semifinal') {
-        badge.innerText = '🔥 SEMIFINAL AO VIVO';
-        subtitle.innerText = `Disputa da 2ª Passada`;
-        renderSemifinalScreen(container);
-      } else if (mode === 'grandefinal') {
-        badge.innerText = '🏆 GRANDE FINAL';
-        subtitle.innerText = `Disputa do Pódio (3ª Passada)`;
-        renderGrandeFinalScreen(container);
-      } else {
-        badge.innerText = 'AGUARDANDO';
-        subtitle.innerText = 'Sistema em Aguardo';
-        container.innerHTML = `
-          <div style="text-align: center; padding: 100px 20px; color: #64748b; font-size: 1.8rem;">
-            📡 Nenhuma tela ativa no momento pelo operador.
-          </div>`;
-      }
-    }
-
-    function renderDrawScreen(container) {
-      const category = state.activePanel.category;
-      const list = Object.values(state.trios)
-        .filter(t => !category || t.category === category)
-        .sort((a, b) => (a.startOrder || 999) - (b.startOrder || 999));
-
-      if (list.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 50px; font-size: 1.5rem;">Nenhum trio encontrado para o sorteio.</div>`;
+      const phaseTitle = document.getElementById('panel-phase-title');
+      
+      if (!activeCat && mode !== 'placar') {
+        phaseTitle.innerText = "AGUARDANDO SELEÇÃO DE ETAPA EM PISTA...";
         return;
       }
 
-      let html = `
-        <div class="painel-table-container">
-          <table class="painel-table">
-            <thead>
-              <tr>
-                <th>Start #</th>
-                <th>Senha</th>
-                <th>Integrantes do Trio</th>
-                <th>Categoria</th>
-                <th>Lote</th>
-              </tr>
-            </thead>
-            <tbody>`;
+      phaseTitle.innerText = `CATEGORIA/ETAPA: ${activeCat || 'GERAL'}`;
 
-      list.forEach(t => {
-        const batchNum = calculateBatchNumber(t.startOrder);
-        html += `
+      // 1. Filtrar APENAS os trios da categoria ativa que possuem ordem de largada
+      const allCategoryTrios = Object.values(state.trios).filter(t => 
+        (!activeCat || t.category === activeCat || t.catEmbutida === activeCat) && t.startOrder
+      );
+
+      // Ordenar por ordem de start
+      allCategoryTrios.sort((a, b) => a.startOrder - b.startOrder);
+
+      // Separar pendentes (que ainda vão correr) e concluídos
+      const pendingTrios = allCategoryTrios.filter(t => !t.result);
+      const completedTrios = allCategoryTrios.filter(t => t.result);
+
+      // -------------------------------------------------------------
+      // A. TRIO EM PISTA (PRÓXIMO PENDENTE DA CATEGORIA)
+      // -------------------------------------------------------------
+      const current = pendingTrios[0];
+      if (current) {
+        document.getElementById('current-trio-names').innerText = `${current.r1} • ${current.r2} • ${current.r3}`;
+        document.getElementById('current-trio-order').innerText = `#${current.startOrder}`;
+        document.getElementById('current-trio-senha').innerText = `#${current.senha}`;
+        document.getElementById('current-trio-lote').innerText = `Lote ${getBatchNumber(current.startOrder)}`;
+      } else {
+        document.getElementById('current-trio-names').innerText = "✅ Prova Concluída nesta Etapa!";
+        document.getElementById('current-trio-order').innerText = "--";
+        document.getElementById('current-trio-senha').innerText = "--";
+        document.getElementById('current-trio-lote').innerText = "--";
+      }
+
+      // -------------------------------------------------------------
+      // B. PRÓXIMOS A CORRER (FILA DE ESPERA DA ETAPA)
+      // -------------------------------------------------------------
+      const tbodyNext = document.getElementById('tbody-next-trios');
+      const nextInLine = pendingTrios.slice(1, 6); // Pega os 5 próximos após o que está em pista
+
+      if (nextInLine.length === 0) {
+        tbodyNext.innerHTML = `<tr><td colspan="4" style="text-align:center;">Nenhum outro trio aguardando nesta etapa.</td></tr>`;
+      } else {
+        tbodyNext.innerHTML = nextInLine.map(t => `
           <tr>
-            <td><strong style="color:#60a5fa; font-size: 1.5rem;">${t.startOrder ? '#' + t.startOrder : '-'}</strong></td>
+            <td><strong style="color:#60a5fa;">#${t.startOrder}</strong></td>
             <td>Senha #${t.senha}</td>
             <td><strong>${t.r1}, ${t.r2}, ${t.r3}</strong></td>
-            <td>${t.category} ${t.catEmbutida ? '<span style="color:#22c55e;">('+t.catEmbutida+')</span>' : ''}</td>
-            <td><span class="badge-status status-wait">Lote ${batchNum}</span></td>
-          </tr>`;
-      });
-
-      html += `</tbody></table></div>`;
-      container.innerHTML = html;
-    }
-
-    function renderPistaScreen(container) {
-      const category = state.activePanel.category;
-      const sortedTrios = Object.entries(state.trios)
-        .filter(([_, t]) => (!category || t.category === category) && t.startOrder !== null)
-        .sort((a, b) => a[1].startOrder - b[1].startOrder);
-
-      const pending = sortedTrios.filter(([_, t]) => !t.result);
-      const current = pending[0];
-
-      let html = '';
-
-      if (current) {
-        const [_, trio] = current;
-        const batchNum = calculateBatchNumber(trio.startOrder);
-        html += `
-          <div class="pista-hero-card">
-            <div class="pista-hero-title">🤠 EM PISTA AGORA - CORRIDA #${trio.startOrder}</div>
-            <div class="pista-hero-names">${trio.r1} &bull; ${trio.r2} &bull; ${trio.r3}</div>
-            <div class="pista-hero-meta">
-              <span><strong>Senha:</strong> #${trio.senha}</span>
-              <span><strong>Categoria:</strong> ${trio.category}</span>
-              <span><strong>Lote:</strong> ${batchNum}</span>
-            </div>
-          </div>`;
-      } else {
-        html += `
-          <div class="pista-hero-card" style="background: #1e293b; border-color: #64748b;">
-            <div class="pista-hero-title">✅ ETAPA CONCLUÍDA</div>
-            <div class="pista-hero-names">Todas as corridas foram registradas!</div>
-          </div>`;
+            <td><span class="badge-lote">Lote ${getBatchNumber(t.startOrder)}</span></td>
+          </tr>
+        `).join('');
       }
 
-      html += `
-        <div class="painel-table-container">
-          <h3 style="margin-top:0; color:#94a3b8; font-size: 1.3rem;">📋 PRÓXIMOS A CORRER (SEQUÊNCIA)</h3>
-          <table class="painel-table">
-            <thead>
-              <tr>
-                <th>Ordem</th>
-                <th>Senha</th>
-                <th>Trio</th>
-                <th>Lote</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>`;
-
-      if (pending.length === 0) {
-        html += `<tr><td colspan="5" style="text-align:center;">Nenhum trio aguardando corrida.</td></tr>`;
-      } else {
-        pending.slice(0, 8).forEach(([_, t], idx) => {
-          const isCurrent = idx === 0;
-          const bNum = calculateBatchNumber(t.startOrder);
-          html += `
-            <tr class="${isCurrent ? 'em-pista' : ''}">
-              <td><strong>#${t.startOrder}</strong></td>
-              <td>Senha #${t.senha}</td>
-              <td>${t.r1}, ${t.r2}, ${t.r3}</td>
-              <td>Lote ${bNum}</td>
-              <td>${isCurrent ? '<span class="badge-status status-pista">🤠 EM PISTA</span>' : '<span class="badge-status status-wait">⏳ AGUARDANDO</span>'}</td>
-            </tr>`;
-        });
-      }
-
-      html += `</tbody></table></div>`;
-      container.innerHTML = html;
-    }
-
-    function renderPlacarScreen(container) {
-      const category = state.activePanel.category;
-      let allTrios = Object.values(state.trios).filter(t => t.result);
-
-      if (category && category !== 'ALL') {
-        allTrios = allTrios.filter(t => t.category === category || t.catEmbutida === category);
-      }
-
-      allTrios.sort((a, b) => {
+      // -------------------------------------------------------------
+      // C. CLASSIFICAÇÃO DAS BATERIAS EM TEMPO REAL (2 COLUNAS)
+      // -------------------------------------------------------------
+      
+      // Função de ordenação oficial do Team Penning (Mais bois -> Menor tempo)
+      const sortLeaderboard = (a, b) => {
         if (a.result.bois !== b.result.bois) return b.result.bois - a.result.bois;
         return a.result.time - b.result.time;
-      });
+      };
+
+      // Se a prova possui Lotes/Baterias diferentes, agrupamos por Lote 1 e Lote 2
+      const lote1Trios = completedTrios.filter(t => getBatchNumber(t.startOrder) === 1).sort(sortLeaderboard);
+      const lote2Trios = completedTrios.filter(t => getBatchNumber(t.startOrder) === 2).sort(sortLeaderboard);
+
+      renderTableBody('tbody-bat-1', lote1Trios);
+      renderTableBody('tbody-bat-2', lote2Trios);
+    }
+
+    function renderTableBody(elementId, list) {
+      const tbody = document.getElementById(elementId);
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sem tempos registrados</td></tr>`;
+        return;
+      }
 
       const limit = state.config.qualifiedPerBatch || 10;
 
-      let html = `
-        <div class="painel-table-container">
-          <h3 style="margin-top:0; color:#22c55e; font-size: 1.4rem;">📊 RANKING E CLASSIFICADOS PARCIAIS ${category ? `(${category})` : ''}</h3>
-          <table class="painel-table">
-            <thead>
-              <tr>
-                <th>Pos.</th>
-                <th>Start #</th>
-                <th>Trio</th>
-                <th>Categoria</th>
-                <th>Lote / Bateria</th>
-                <th>Bois</th>
-                <th>Tempo</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>`;
+      tbody.innerHTML = list.map((t, idx) => {
+        const rank = idx + 1;
+        const isClassified = rank <= limit && !t.result.isSAT;
+        const timeDisplay = t.result.isSAT ? 'SAT' : `${t.result.time.toFixed(3)}s`;
 
-      if (allTrios.length === 0) {
-        html += `<tr><td colspan="8" style="text-align:center;">Nenhum tempo registrado para esta categoria.</td></tr>`;
-      } else {
-        allTrios.forEach((t, idx) => {
-          const pos = idx + 1;
-          const isClassified = pos <= limit && !t.result.isSAT;
-          const batchNum = calculateBatchNumber(t.startOrder);
-          html += `
-            <tr class="${isClassified ? 'qualified' : ''}">
-              <td><strong style="font-size:1.4rem;">${pos}º</strong></td>
-              <td>#${t.startOrder}</td>
-              <td><strong>${t.r1}, ${t.r2}, ${t.r3}</strong></td>
-              <td>${t.category}</td>
-              <td><span class="badge-status status-wait">Lote ${batchNum}</span></td>
-              <td>${t.result.bois} boi(s)</td>
-              <td><strong>${t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's'}</strong></td>
-              <td>${isClassified ? '<span class="badge-status status-qualified">CLASSIFICADO</span>' : '-'}</td>
-            </tr>`;
-        });
-      }
-
-      html += `</tbody></table></div>`;
-      container.innerHTML = html;
-    }
-
-    function renderSemifinalScreen(container) {
-      const categoryFilter = state.activePanel.category;
-      
-      let semiTrios = Object.entries(state.trios)
-        .filter(([_, t]) => t.semiOrder)
-        .sort((a, b) => a[1].semiOrder - b[1].semiOrder);
-
-      if (categoryFilter) {
-        const cats = categoryFilter.split(',').map(c => c.trim());
-        semiTrios = semiTrios.filter(([_, t]) => cats.includes(t.category));
-      }
-
-      const pending = semiTrios.filter(([_, t]) => !t.semiResult);
-      const current = pending[0];
-
-      let html = '';
-
-      if (current) {
-        const [_, t] = current;
-        const t1 = t.result ? (t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's') : '-';
-        html += `
-          <div class="pista-hero-card" style="border-color: #f59e0b;">
-            <div class="pista-hero-title" style="color: #fcd34d;">🔥 SEMIFINAL EM PISTA - ORDEM #${t.semiOrder}</div>
-            <div class="pista-hero-names">${t.r1} &bull; ${t.r2} &bull; ${t.r3}</div>
-            <div class="pista-hero-meta">
-              <span><strong>1ª Passada:</strong> ${t.result ? t.result.bois + 'b' : '-'} / ${t1}</span>
-              <span><strong>Categoria:</strong> ${t.category}</span>
-            </div>
-          </div>`;
-      }
-
-      const completed = semiTrios
-        .map(([_, t]) => t)
-        .filter(t => t.semiResult)
-        .sort((a, b) => {
-          if (a.semiResult.bois !== b.semiResult.bois) return b.semiResult.bois - a.semiResult.bois;
-          return a.semiResult.time - b.semiResult.time;
-        });
-
-      html += `
-        <div class="painel-table-container">
-          <h3 style="margin-top:0; color:#f59e0b; font-size: 1.4rem;">📊 RANKING PARCIAL DA SEMIFINAL ${categoryFilter ? `(${categoryFilter})` : ''}</h3>
-          <table class="painel-table">
-            <thead>
-              <tr>
-                <th>Pos.</th>
-                <th>Trio</th>
-                <th>Categoria</th>
-                <th>1ª Passada</th>
-                <th>2ª Passada (Bois)</th>
-                <th>2ª Passada (Tempo)</th>
-              </tr>
-            </thead>
-            <tbody>`;
-
-      if (completed.length === 0) {
-        html += `<tr><td colspan="6" style="text-align:center;">Aguardando conclusões de corridas na semifinal.</td></tr>`;
-      } else {
-        completed.forEach((t, idx) => {
-          const t1 = t.result ? (t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's') : '-';
-          html += `
-            <tr>
-              <td><strong style="font-size:1.4rem; color:#f59e0b;">${idx + 1}º</strong></td>
-              <td><strong>${t.r1}, ${t.r2}, ${t.r3}</strong></td>
-              <td>${t.category}</td>
-              <td>${t.result ? t.result.bois + 'b' : '-'} / ${t1}</td>
-              <td>${t.semiResult.bois} boi(s)</td>
-              <td><strong>${t.semiResult.isSAT ? 'SAT' : t.semiResult.time.toFixed(3) + 's'}</strong></td>
-            </tr>`;
-        });
-      }
-
-      html += `</tbody></table></div>`;
-      container.innerHTML = html;
-    }
-
-    function renderGrandeFinalScreen(container) {
-      const finalTrios = Object.values(state.trios)
-        .filter(t => t.finalOrder && t.finalResult)
-        .sort((a, b) => {
-          if (a.finalResult.bois !== b.finalResult.bois) return b.finalResult.bois - a.finalResult.bois;
-          return a.finalResult.time - b.finalResult.time;
-        });
-
-      let html = `
-        <div class="painel-table-container" style="border: 2px solid #ef4444;">
-          <h3 style="margin-top:0; color:#ef4444; font-size: 1.8rem; text-align: center;">🏆 RESULTADO OFICIAL - GRANDE FINAL</h3>
-          <table class="painel-table">
-            <thead>
-              <tr>
-                <th>Pódio</th>
-                <th>Trio</th>
-                <th>1ª Passada</th>
-                <th>2ª Passada</th>
-                <th>3ª Passada (Final)</th>
-              </tr>
-            </thead>
-            <tbody>`;
-
-      if (finalTrios.length === 0) {
-        html += `<tr><td colspan="5" style="text-align:center;">Aguardando finalização das corridas decisivas.</td></tr>`;
-      } else {
-        finalTrios.forEach((t, idx) => {
-          const pos = idx + 1;
-          const medal = pos === 1 ? '🥇 ' : pos === 2 ? '🥈 ' : pos === 3 ? '🥉 ' : '';
-          const t1 = t.result ? (t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's') : '-';
-          const t2 = t.semiResult ? (t.semiResult.isSAT ? 'SAT' : t.semiResult.time.toFixed(3) + 's') : '-';
-
-          html += `
-            <tr style="${pos <= 3 ? 'background: rgba(239, 68, 68, 0.15);' : ''}">
-              <td><strong style="font-size: 1.6rem; color: #fca5a5;">${medal}${pos}º Lugar</strong></td>
-              <td><strong style="font-size: 1.4rem;">${t.r1}, ${t.r2}, ${t.r3}</strong></td>
-              <td>${t1}</td>
-              <td>${t2}</td>
-              <td><strong style="font-size:1.5rem; color:#ef4444;">${t.finalResult.isSAT ? 'SAT' : t.finalResult.time.toFixed(3) + 's'}</strong></td>
-            </tr>`;
-        });
-      }
-
-      html += `</tbody></table></div>`;
-      container.innerHTML = html;
+        return `
+          <tr class="${isClassified ? 'tag-qualified' : ''}">
+            <td><strong>${rank}º</strong></td>
+            <td>${t.r1}, ${t.r2}, ${t.r3}</td>
+            <td>${t.result.bois}b</td>
+            <td><strong>${timeDisplay}</strong></td>
+          </tr>
+        `;
+      }).join('');
     }
   </script>
 </body>
