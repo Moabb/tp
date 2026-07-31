@@ -606,7 +606,10 @@ function renderSemiSequence(sortedSemi) {
 
   let html = `
     <div class="card-form" style="margin-top: 25px;">
-      <h3>📋 Sequência da Semifinal (Próximos a Correr)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin: 0;">📋 Sequência da Semifinal (Ordem de Entrada)</h3>
+        <button class="btn btn-primary" onclick="window.print()">📄 Gerar PDF / Imprimir Lista de Corridas</button>
+      </div>
       <table class="data-table">
         <thead>
           <tr>
@@ -804,7 +807,10 @@ function renderFinalSequence(sortedFinal) {
 
   let html = `
     <div class="card-form" style="margin-top: 25px;">
-      <h3>📋 Sequência da Grande Final (Próximos a Correr)</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin: 0;">📋 Sequência da Grande Final (Ordem de Entrada)</h3>
+        <button class="btn btn-primary" onclick="window.print()">📄 Gerar PDF / Imprimir Lista de Corridas</button>
+      </div>
       <table class="data-table">
         <thead>
           <tr>
@@ -834,7 +840,7 @@ function renderFinalSequence(sortedFinal) {
     });
   }
 
-  html += `</tbody></table></div>`; // Correção da tag quebrada </tbody>mtable>
+  html += `</tbody></table></div>`;
   container.innerHTML = html;
 }
 
