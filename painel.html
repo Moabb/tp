@@ -14,12 +14,18 @@
       color: #ffffff;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       margin: 0;
-      padding: 5px;
+      padding: 10px;
       height: 100vh;
       display: flex;
       flex-direction: column;
       gap: 12px;
       overflow: hidden;
+    }
+
+    .topbar {
+      width: 100%;
+      display: flex;
+      gap: 10px;
     }
 
     /* 1. TOPO: Identificação da Competição e Fase */
@@ -28,13 +34,16 @@
       background: #000000;
       border: 2px solid #334155;
       border-radius: 8px;
-      padding: 5px 20px;
+      padding: 8px 20px;
       text-align: center;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .header-title {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 900;
       margin: 0;
       text-transform: uppercase;
@@ -56,13 +65,13 @@
       background: #000000;
       border: 3px solid #2563eb;
       border-radius: 8px;
-      padding: 5px 20px;
+      padding: 8px 20px;
       text-align: center;
       box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
     }
 
     .pista-label {
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 800;
       color: #93c5fd;
       text-transform: uppercase;
@@ -70,29 +79,33 @@
     }
 
     .pista-names {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 900;
       color: #ffffff;
-      margin: 0px 0;
+      margin: 2px 0;
       text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .pista-details {
       display: flex;
       justify-content: center;
-      gap: 30px;
-      font-size: 1.1rem;
+      gap: 20px;
+      font-size: 1rem;
       color: #cbd5e1;
       font-weight: 600;
     }
 
-    /* 3. CENTRO: Classificação das Baterias em Tempo Real (2 Colunas) */
+    /* 3. CENTRO: GRID DINÂMICO DE BATERIAS */
     .middle-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      /* Define colunas adaptáveis dinamicamente via JS ou css variable */
+      grid-template-columns: repeat(var(--num-cols, 2), 1fr);
       gap: 12px;
       flex: 1;
-      min-height: 0; /* Permite rolar internamente se faltar espaço */
+      min-height: 0;
     }
 
     .ranking-box {
@@ -122,7 +135,7 @@
       border: 2px solid #334155;
       border-radius: 8px;
       padding: 10px;
-      height: 280px;
+      height: 200px;
       display: flex;
       flex-direction: column;
     }
@@ -131,7 +144,7 @@
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 1rem;
+      font-size: 0.95rem;
       text-align: left;
     }
 
@@ -139,12 +152,14 @@
       background: #1e293b;
       color: #94a3b8;
       padding: 6px 10px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       text-transform: uppercase;
+      position: sticky;
+      top: 0;
     }
 
     .data-table td {
-      padding: 6px 10px;
+      padding: 5px 10px;
       border-bottom: 1px solid #1e293b;
       font-weight: 600;
       white-space: nowrap;
@@ -162,29 +177,12 @@
       color: #fff;
       padding: 2px 6px;
       border-radius: 4px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     .tag-qualified {
       color: #4ade80;
       font-weight: 800;
-    }
-
-    /* Mensagem quando não há transmissão */
-    .empty-screen {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      font-size: 1.8rem;
-      color: #64748b;
-      text-align: center;
-    }
-
-    .topbar {
-      width: 100%;
-      display: flex;
-      gap: 10px;
     }
   </style>
 </head>
@@ -198,62 +196,22 @@
     </header>
 
     <!-- 2. TRIO EM PISTA -->
-      <section class="pista-block">
-        <div class="pista-label">🤠 TRIO EM PISTA AGORA</div>
-        <div class="pista-names" id="current-trio-names">Nenhum trio na pista</div>
-        <div class="pista-details">
-          <span><strong>Ordem:</strong> <span id="current-trio-order">--</span></span>
-          <span><strong>Senha:</strong> <span id="current-trio-senha">--</span></span>
-          <span><strong>Lote de Gado:</strong> <span id="current-trio-lote">--</span></span>
-        </div>
-      </section>
-    </div>
+    <section class="pista-block">
+      <div class="pista-label">🤠 TRIO EM PISTA AGORA</div>
+      <div class="pista-names" id="current-trio-names">Nenhum trio na pista</div>
+      <div class="pista-details">
+        <span><strong>Ordem:</strong> <span id="current-trio-order">--</span></span>
+        <span><strong>Senha:</strong> <span id="current-trio-senha">--</span></span>
+        <span><strong>Lote:</strong> <span id="current-trio-lote">--</span></span>
+      </div>
+    </section>
+  </div>
 
   <main id="main-content" style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;">
     
-    
-
-    <!-- 3. CLASSIFICAÇÃO DAS BATERIAS EM TEMPO REAL (2 COLUNAS) -->
-    <section class="middle-grid">
-      <!-- Coluna Esquerda: Bateria / Lote 1 -->
-      <div class="ranking-box">
-        <div class="box-title" id="title-bat-1">📊 Classificação - Lote 1</div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Pos</th>
-                <th>Trio</th>
-                <th>Bois</th>
-                <th>Tempo</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-bat-1">
-              <tr><td colspan="4" style="text-align:center;">Sem registros</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Coluna Direita: Bateria / Lote 2 (ou ranking geral da etapa) -->
-      <div class="ranking-box">
-        <div class="box-title" id="title-bat-2">📊 Classificação - Lote 2</div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Pos</th>
-                <th>Trio</th>
-                <th>Bois</th>
-                <th>Tempo</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-bat-2">
-              <tr><td colspan="4" style="text-align:center;">Sem registros</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <!-- 3. CLASSIFICAÇÃO DAS BATERIAS (DINÂMICO) -->
+    <section class="middle-grid" id="batteries-container">
+      <!-- As colunas das baterias serão renderizadas aqui dinamicamente pelo JS -->
     </section>
 
     <!-- 4. LISTA DE TRIOS QUE VEM EM SEGUIDA -->
@@ -304,7 +262,7 @@
       activePanel: { mode: 'none', category: '' }
     };
 
-    // Função utilitária para calcular o lote de gado
+    // Função utilitária para calcular o lote/bateria
     function getBatchNumber(startOrder) {
       if (!startOrder) return 1;
       const batchSize = state.config.batchSize || 25;
@@ -328,7 +286,7 @@
       renderDashboard();
     });
 
-    // Escuta o comando de ativação do painel vindo do operador
+    // Escuta Comando do Operador
     onValue(ref(db, 'activePanel'), (snap) => {
       if (snap.exists()) {
         state.activePanel = snap.val();
@@ -339,7 +297,6 @@
     function renderDashboard() {
       const activeCat = state.activePanel.category;
       const mode = state.activePanel.mode || 'none';
-
       const phaseTitle = document.getElementById('panel-phase-title');
       
       if (!activeCat && mode !== 'placar') {
@@ -347,22 +304,20 @@
         return;
       }
 
-      phaseTitle.innerText = `CATEGORIA/ETAPA: ${activeCat || 'GERAL'}`;
+      phaseTitle.innerText = `CATEGORIA: ${activeCat || 'GERAL'}`;
 
-      // 1. Filtrar APENAS os trios da categoria ativa que possuem ordem de largada
+      // 1. Filtrar trios da categoria ativa
       const allCategoryTrios = Object.values(state.trios).filter(t => 
         (!activeCat || t.category === activeCat || t.catEmbutida === activeCat) && t.startOrder
       );
 
-      // Ordenar por ordem de start
       allCategoryTrios.sort((a, b) => a.startOrder - b.startOrder);
 
-      // Separar pendentes (que ainda vão correr) e concluídos
       const pendingTrios = allCategoryTrios.filter(t => !t.result);
       const completedTrios = allCategoryTrios.filter(t => t.result);
 
       // -------------------------------------------------------------
-      // A. TRIO EM PISTA (PRÓXIMO PENDENTE DA CATEGORIA)
+      // A. TRIO EM PISTA
       // -------------------------------------------------------------
       const current = pendingTrios[0];
       if (current) {
@@ -378,10 +333,10 @@
       }
 
       // -------------------------------------------------------------
-      // B. PRÓXIMOS A CORRER (FILA DE ESPERA DA ETAPA)
+      // B. PRÓXIMOS A CORRER
       // -------------------------------------------------------------
       const tbodyNext = document.getElementById('tbody-next-trios');
-      const nextInLine = pendingTrios.slice(1, 6); // Pega os 5 próximos após o que está em pista
+      const nextInLine = pendingTrios.slice(1, 6);
 
       if (nextInLine.length === 0) {
         tbodyNext.innerHTML = `<tr><td colspan="4" style="text-align:center;">Nenhum outro trio aguardando nesta etapa.</td></tr>`;
@@ -397,46 +352,71 @@
       }
 
       // -------------------------------------------------------------
-      // C. CLASSIFICAÇÃO DAS BATERIAS EM TEMPO REAL (2 COLUNAS)
+      // C. RENDERIZAÇÃO DINÂMICA DAS BATERIAS
       // -------------------------------------------------------------
-      
-      // Função de ordenação oficial do Team Penning (Mais bois -> Menor tempo)
+      const numBatteries = state.config.numBatteries || 1;
+      const batteriesContainer = document.getElementById('batteries-container');
+
+      // Atualiza a variável CSS para dividir o grid pelo nº de baterias
+      batteriesContainer.style.setProperty('--num-cols', numBatteries);
+
       const sortLeaderboard = (a, b) => {
         if (a.result.bois !== b.result.bois) return b.result.bois - a.result.bois;
         return a.result.time - b.result.time;
       };
 
-      // Se a prova possui Lotes/Baterias diferentes, agrupamos por Lote 1 e Lote 2
-      const lote1Trios = completedTrios.filter(t => getBatchNumber(t.startOrder) === 1).sort(sortLeaderboard);
-      const lote2Trios = completedTrios.filter(t => getBatchNumber(t.startOrder) === 2).sort(sortLeaderboard);
+      const limit = state.config.qualifiedPerBatch || 10;
+      let htmlBaterias = '';
 
-      renderTableBody('tbody-bat-1', lote1Trios);
-      renderTableBody('tbody-bat-2', lote2Trios);
-    }
+      for (let i = 1; i <= numBatteries; i++) {
+        // Filtra trios que competiram nesta bateria/lote específica
+        const batchTrios = completedTrios
+          .filter(t => getBatchNumber(t.startOrder) === i)
+          .sort(sortLeaderboard);
 
-    function renderTableBody(elementId, list) {
-      const tbody = document.getElementById(elementId);
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sem tempos registrados</td></tr>`;
-        return;
+        let tableRows = '';
+        if (batchTrios.length === 0) {
+          tableRows = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Sem registros</td></tr>`;
+        } else {
+          tableRows = batchTrios.map((t, idx) => {
+            const rank = idx + 1;
+            const isClassified = rank <= limit && !t.result.isSAT;
+            const timeDisplay = t.result.isSAT ? 'SAT' : `${Number(t.result.time).toFixed(3)}s`;
+
+            return `
+              <tr class="${isClassified ? 'tag-qualified' : ''}">
+                <td><strong>${rank}º</strong></td>
+                <td>${t.r1}, ${t.r2}, ${t.r3}</td>
+                <td>${t.result.bois}b</td>
+                <td><strong>${timeDisplay}</strong></td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        htmlBaterias += `
+          <div class="ranking-box">
+            <div class="box-title">📊 Classificação - Lote ${i}</div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Trio</th>
+                    <th>Bois</th>
+                    <th>Tempo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
       }
 
-      const limit = state.config.qualifiedPerBatch || 10;
-
-      tbody.innerHTML = list.map((t, idx) => {
-        const rank = idx + 1;
-        const isClassified = rank <= limit && !t.result.isSAT;
-        const timeDisplay = t.result.isSAT ? 'SAT' : `${t.result.time.toFixed(3)}s`;
-
-        return `
-          <tr class="${isClassified ? 'tag-qualified' : ''}">
-            <td><strong>${rank}º</strong></td>
-            <td>${t.r1}, ${t.r2}, ${t.r3}</td>
-            <td>${t.result.bois}b</td>
-            <td><strong>${timeDisplay}</strong></td>
-          </tr>
-        `;
-      }).join('');
+      batteriesContainer.innerHTML = htmlBaterias;
     }
   </script>
 </body>
