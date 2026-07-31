@@ -325,20 +325,23 @@
         <button class="btn btn-tv" onclick="activarPainel('grandefinal')">📺 Ativar Grande Final no Painel</button>
       </div>
 
-      <div class="action-bar card-form">
-        <h3>Configuração e Premiação da Grande Final</h3>
-        <div class="form-grid" style="align-items: flex-end;">
-          <div class="field">
-            <label for="finalCategorySelect">Selecione a Categoria para a Grande Final:</label>
+      <div class="action-bar card-form" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <h3 style="margin: 0;">Configuração e Premiação da Grande Final</h3>
+  
+        <div style="display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;">
+          <div class="field" style="margin: 0;">
+            <label for="finalCategorySelect">Categoria:</label>
             <select id="finalCategorySelect" onchange="onFinalCategoryChange()">
               <option value="">-- Selecione a Categoria --</option>
             </select>
           </div>
-          <div class="field">
-            <label for="finalAwardedCount">Nº de Trios Premiados (Pódio):</label>
+          
+          <div class="field" style="margin: 0; width: 130px;">
+            <label for="finalAwardedCount">Nº Premiados:</label>
             <input type="number" id="finalAwardedCount" value="5" min="1" required>
           </div>
-          <button class="btn btn-danger" onclick="gerarOrdemGrandeFinal()">🏆 Gerar Ordem da Grande Final (Invertida)</button>
+
+          <button class="btn btn-danger" onclick="gerarOrdemGrandeFinal()">🏆 Gerar Ordem (Invertida)</button>
         </div>
       </div>
 

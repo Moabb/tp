@@ -61,27 +61,36 @@ body {
 .tab-content.active { display: block; }
 
 .card-form, .card-run-info {
-  background: #dddddd;
-  padding: 1.5rem;
+  background: #dddddd; /* ou a cor desejada */
+  padding: 0.85rem 1.2rem; /* Reduzido de 1.5rem para ficar bem mais compacto */
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.85rem; /* Espaçamento menor entre cards */
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.6rem 1rem; /* Diminuído o espaçamento entre linhas e colunas */
+  margin-bottom: 0.5rem;
 }
 
-.field { display: flex; flex-direction: column; gap: 0.4rem; }
-.field label { font-size: 0.9rem; font-weight: 600; }
+.field { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.2rem; /* Reduzido o espaço entre a legenda e o campo */
+}
+
+.field label { 
+  font-size: 0.82rem; /* Rótulos levemente menores */
+  font-weight: 600; 
+}
+
 .field input, .field select {
-  padding: 0.6rem;
+  padding: 0.4rem 0.6rem; /* Diminuído a altura do input */
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .checkbox-field { justify-content: flex-end; }
@@ -104,13 +113,22 @@ body {
 
 .divider { border: 0; height: 1px; background: var(--border); margin: 2rem 0; }
 
+/* Ajusta o cabeçalho e campos em linha única em cards de ação */
 .action-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
 }
 
+/* Para organizar a linha dos formulários de forma mais horizontal */
+.form-grid-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
 .data-table {
   width: 100%;
   border-collapse: collapse;
