@@ -198,8 +198,8 @@ if (configForm) {
       numBatteries: parseInt(document.getElementById('numBatteries').value),
       alertThreshold: parseInt(document.getElementById('alertThreshold').value),
       qualifiedPerBatch: parseInt(document.getElementById('qualifiedPerBatch').value),
-      totalFinalists: parseInt(document.getElementById('semiFinalistsCount')?.value || 10),
-      totalAwarded: parseInt(document.getElementById('finalAwardedCount')?.value || 5),
+      totalFinalists: parseInt(document.getElementById('semiFinalistsCountConfig')?.value || 10),
+      totalAwarded: parseInt(document.getElementById('finalAwardedCountConfig')?.value || 5),
       isSaved: true
     };
 
@@ -591,7 +591,7 @@ window.updateSemifinalUI = function() {
     const [key, trio] = pending;
     if (document.getElementById('semi-run-num')) document.getElementById('semi-run-num').innerText = `#${trio.semiOrder}`;
     if (document.getElementById('semi-trio-names')) document.getElementById('semi-trio-names').innerText = `${trio.r1} | ${trio.r2} | ${trio.r3}`;
-    if (document.getElementById('semi-trio-pass1')) document.getElementById('semi-trio-pass1').innerText = `${trio.result.bois} boi(s) - ${trio.result.time.toFixed(3)}s (${trio.category})`;
+    if (document.getElementById('semi-trio-pass1')) document.getElementById('semi-trio-pass1').innerText = `${trio.result.bois} boi(s) - ${trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's'} (${trio.category})`;
     if (document.getElementById('semi-result-form')) document.getElementById('semi-result-form').dataset.currentKey = key;
   }
 
@@ -790,9 +790,12 @@ window.updateGrandeFinalUI = function() {
     if (document.getElementById('final-result-form')) document.getElementById('final-result-form').dataset.currentKey = "";
   } else {
     const [key, trio] = pending;
+    const t1 = trio.result ? (trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's') : '--';
+    const t2 = trio.semiResult ? (trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's') : '--';
+
     if (document.getElementById('final-run-num')) document.getElementById('final-run-num').innerText = `#${trio.finalOrder}`;
     if (document.getElementById('final-trio-names')) document.getElementById('final-trio-names').innerText = `${trio.r1} | ${trio.r2} | ${trio.r3}`;
-    if (document.getElementById('final-trio-acumulado')) document.getElementById('final-trio-acumulado').innerText = `1ª: ${trio.result.time.toFixed(3)}s | 2ª: ${trio.semiResult.time.toFixed(3)}s`;
+    if (document.getElementById('final-trio-acumulado')) document.getElementById('final-trio-acumulado').innerText = `1ª: ${t1} | 2ª: ${t2}`;
     if (document.getElementById('final-result-form')) document.getElementById('final-result-form').dataset.currentKey = key;
   }
 
@@ -828,13 +831,15 @@ function renderFinalSequence(sortedFinal) {
   } else {
     pendingFinal.forEach(([key, trio], index) => {
       const isCurrentInPista = index === 0;
+      const t1 = trio.result ? (trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's') : '-';
+      const t2 = trio.semiResult ? (trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's') : '-';
 
       html += `
         <tr style="${isCurrentInPista ? 'background-color: #e6f4ff; font-weight: bold; border-left: 5px solid #007bff;' : ''}">
           <td><strong>#${trio.finalOrder}</strong></td>
           <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
-          <td>${trio.result ? trio.result.time.toFixed(3) + 's' : '-'}</td>
-          <td>${trio.semiResult ? trio.semiResult.time.toFixed(3) + 's' : '-'}</td>
+          <td>${t1}</td>
+          <td>${t2}</td>
           <td>${isCurrentInPista ? '🤠 <strong>EM PISTA</strong>' : '⏳ Aguardando'}</td>
         </tr>`;
     });
@@ -919,13 +924,19 @@ window.renderGrandFinalLeaderboard = function() {
       const pos = index + 1;
       const isAwarded = pos <= awardedLimit && !trio.finalResult.isSAT;
 
+      const t1 = trio.result ? (trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's') : '-';
+      const b1 = trio.result ? trio.result.bois + 'b' : '-';
+
+      const t2 = trio.semiResult ? (trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's') : '-';
+      const b2 = trio.semiResult ? trio.semiResult.bois + 'b' : '-';
+
       html += `
         <tr class="${isAwarded ? 'qualified-row' : ''}">
           <td><strong>${pos}º Lugar</strong> ${pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : ''}</td>
           <td>${trio.r1}, ${trio.r2}, ${trio.r3}</td>
           <td>${trio.category}</td>
-          <td>${trio.result.bois}b / ${trio.result.isSAT ? 'SAT' : trio.result.time.toFixed(3) + 's'}</td>
-          <td>${trio.semiResult.bois}b / ${trio.semiResult.isSAT ? 'SAT' : trio.semiResult.time.toFixed(3) + 's'}</td>
+          <td>${b1} / ${t1}</td>
+          <td>${b2} / ${t2}</td>
           <td><strong>${trio.finalResult.bois} boi(s)</strong></td>
           <td><strong>${trio.finalResult.isSAT ? 'SAT' : trio.finalResult.time.toFixed(3) + 's'}</strong></td>
           <td>${isAwarded ? '🎁 <strong style="color: #28a745;">PREMIADO</strong>' : '-'}</td>
@@ -949,6 +960,8 @@ onValue(ref(db, 'config'), (snapshot) => {
     if (document.getElementById('numBatteries')) document.getElementById('numBatteries').value = state.config.numBatteries || 2;
     if (document.getElementById('alertThreshold')) document.getElementById('alertThreshold').value = state.config.alertThreshold || 5;
     if (document.getElementById('qualifiedPerBatch')) document.getElementById('qualifiedPerBatch').value = state.config.qualifiedPerBatch || 10;
+    if (document.getElementById('semiFinalistsCountConfig')) document.getElementById('semiFinalistsCountConfig').value = state.config.totalFinalists || 10;
+    if (document.getElementById('finalAwardedCountConfig')) document.getElementById('finalAwardedCountConfig').value = state.config.totalAwarded || 5;
     
     if (state.config.totalFinalists && document.getElementById('semiFinalistsCount')) {
       document.getElementById('semiFinalistsCount').value = state.config.totalFinalists;

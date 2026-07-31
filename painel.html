@@ -248,7 +248,6 @@
       }
     }
 
-    // TELA 1: SORTEIO DE CHAVES / START LIST
     function renderDrawScreen(container) {
       const category = state.activePanel.category;
       const list = Object.values(state.trios)
@@ -290,7 +289,6 @@
       container.innerHTML = html;
     }
 
-    // TELA 2: PISTA 1ª PASSADA
     function renderPistaScreen(container) {
       const category = state.activePanel.category;
       const sortedTrios = Object.entries(state.trios)
@@ -359,7 +357,6 @@
       container.innerHTML = html;
     }
 
-    // TELA 3: CLASSIFICAÇÃO / PLACAR NO PAINEL
     function renderPlacarScreen(container) {
       const category = state.activePanel.category;
       let allTrios = Object.values(state.trios).filter(t => t.result);
@@ -418,7 +415,6 @@
       container.innerHTML = html;
     }
 
-    // TELA 4: SEMIFINAL NO PAINEL
     function renderSemifinalScreen(container) {
       const categoryFilter = state.activePanel.category;
       
@@ -438,12 +434,13 @@
 
       if (current) {
         const [_, t] = current;
+        const t1 = t.result ? (t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's') : '-';
         html += `
           <div class="pista-hero-card" style="border-color: #f59e0b;">
             <div class="pista-hero-title" style="color: #fcd34d;">🔥 SEMIFINAL EM PISTA - ORDEM #${t.semiOrder}</div>
             <div class="pista-hero-names">${t.r1} &bull; ${t.r2} &bull; ${t.r3}</div>
             <div class="pista-hero-meta">
-              <span><strong>1ª Passada:</strong> ${t.result.bois}b / ${t.result.time.toFixed(3)}s</span>
+              <span><strong>1ª Passada:</strong> ${t.result ? t.result.bois + 'b' : '-'} / ${t1}</span>
               <span><strong>Categoria:</strong> ${t.category}</span>
             </div>
           </div>`;
@@ -477,12 +474,13 @@
         html += `<tr><td colspan="6" style="text-align:center;">Aguardando conclusões de corridas na semifinal.</td></tr>`;
       } else {
         completed.forEach((t, idx) => {
+          const t1 = t.result ? (t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's') : '-';
           html += `
             <tr>
               <td><strong style="font-size:1.4rem; color:#f59e0b;">${idx + 1}º</strong></td>
               <td><strong>${t.r1}, ${t.r2}, ${t.r3}</strong></td>
               <td>${t.category}</td>
-              <td>${t.result.bois}b / ${t.result.time.toFixed(3)}s</td>
+              <td>${t.result ? t.result.bois + 'b' : '-'} / ${t1}</td>
               <td>${t.semiResult.bois} boi(s)</td>
               <td><strong>${t.semiResult.isSAT ? 'SAT' : t.semiResult.time.toFixed(3) + 's'}</strong></td>
             </tr>`;
@@ -492,11 +490,7 @@
       html += `</tbody></table></div>`;
       container.innerHTML = html;
     }
-    
 
-    
-
-    // TELA 5: GRANDE FINAL
     function renderGrandeFinalScreen(container) {
       const finalTrios = Object.values(state.trios)
         .filter(t => t.finalOrder && t.finalResult)
@@ -526,12 +520,15 @@
         finalTrios.forEach((t, idx) => {
           const pos = idx + 1;
           const medal = pos === 1 ? '🥇 ' : pos === 2 ? '🥈 ' : pos === 3 ? '🥉 ' : '';
+          const t1 = t.result ? (t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's') : '-';
+          const t2 = t.semiResult ? (t.semiResult.isSAT ? 'SAT' : t.semiResult.time.toFixed(3) + 's') : '-';
+
           html += `
             <tr style="${pos <= 3 ? 'background: rgba(239, 68, 68, 0.15);' : ''}">
               <td><strong style="font-size: 1.6rem; color: #fca5a5;">${medal}${pos}º Lugar</strong></td>
               <td><strong style="font-size: 1.4rem;">${t.r1}, ${t.r2}, ${t.r3}</strong></td>
-              <td>${t.result.time.toFixed(3)}s</td>
-              <td>${t.semiResult.time.toFixed(3)}s</td>
+              <td>${t1}</td>
+              <td>${t2}</td>
               <td><strong style="font-size:1.5rem; color:#ef4444;">${t.finalResult.isSAT ? 'SAT' : t.finalResult.time.toFixed(3) + 's'}</strong></td>
             </tr>`;
         });

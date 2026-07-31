@@ -50,6 +50,14 @@
             <label for="qualifiedPerBatch">Classificados por Lote (Top X de cada gado):</label>
             <input type="number" id="qualifiedPerBatch" value="10" min="1" required>
           </div>
+          <div class="field">
+            <label for="semiFinalistsCountConfig">Qtd. Classificados para a Grande Final:</label>
+            <input type="number" id="semiFinalistsCountConfig" value="10" min="1" required>
+          </div>
+          <div class="field">
+            <label for="finalAwardedCountConfig">Qtd. Trios Premiados na Final:</label>
+            <input type="number" id="finalAwardedCountConfig" value="5" min="1" required>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" style="margin-top: 15px;">💾 Salvar Configurações</button>
       </form>
@@ -189,7 +197,6 @@
                 <label>Tempo (Segundos):</label>
                 <input type="number" step="0.001" id="timeSeconds" placeholder="00.000">
               </div>
-              <!-- Checkbox oculto mantido para o JS -->
               <input type="checkbox" id="isSAT" style="display: none;">
             </div>
 
