@@ -114,7 +114,10 @@
       <div class="action-bar card-form">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <h3 style="margin: 0;">Sorteio de Ordem por Categoria (Start List)</h3>
-          <button class="btn btn-tv" onclick="activarPainel('draw', document.getElementById('drawCategorySelect').value)">📺 Ativar Sorteio no Painel</button>
+          <div>
+            <button class="btn btn-primary" onclick="gerarPDFListaSorteio()">📄 Gerar PDF / Compartilhar Lista</button>
+            <button class="btn btn-tv" onclick="activarPainel('draw', document.getElementById('drawCategorySelect').value)">📺 Ativar Sorteio no Painel</button>
+          </div>
         </div>
         <div class="form-grid" style="align-items: flex-end; margin-top: 15px;">
           <div class="field">

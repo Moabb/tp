@@ -359,9 +359,14 @@
       container.innerHTML = html;
     }
 
-    // TELA 3: CLASSIFICAÇÃO / PLACAR
+    // TELA 3: CLASSIFICAÇÃO / PLACAR NO PAINEL
     function renderPlacarScreen(container) {
+      const category = state.activePanel.category;
       let allTrios = Object.values(state.trios).filter(t => t.result);
+
+      if (category && category !== 'ALL') {
+        allTrios = allTrios.filter(t => t.category === category || t.catEmbutida === category);
+      }
 
       allTrios.sort((a, b) => {
         if (a.result.bois !== b.result.bois) return b.result.bois - a.result.bois;
@@ -372,7 +377,7 @@
 
       let html = `
         <div class="painel-table-container">
-          <h3 style="margin-top:0; color:#22c55e; font-size: 1.4rem;">📊 RANKING E CLASSIFICADOS PARCIAIS</h3>
+          <h3 style="margin-top:0; color:#22c55e; font-size: 1.4rem;">📊 RANKING E CLASSIFICADOS PARCIAIS ${category ? `(${category})` : ''}</h3>
           <table class="painel-table">
             <thead>
               <tr>
@@ -380,6 +385,7 @@
                 <th>Start #</th>
                 <th>Trio</th>
                 <th>Categoria</th>
+                <th>Lote / Bateria</th>
                 <th>Bois</th>
                 <th>Tempo</th>
                 <th>Status</th>
@@ -388,17 +394,19 @@
             <tbody>`;
 
       if (allTrios.length === 0) {
-        html += `<tr><td colspan="7" style="text-align:center;">Nenhum tempo registrado ainda.</td></tr>`;
+        html += `<tr><td colspan="8" style="text-align:center;">Nenhum tempo registrado para esta categoria.</td></tr>`;
       } else {
         allTrios.forEach((t, idx) => {
           const pos = idx + 1;
           const isClassified = pos <= limit && !t.result.isSAT;
+          const batchNum = calculateBatchNumber(t.startOrder);
           html += `
             <tr class="${isClassified ? 'qualified' : ''}">
               <td><strong style="font-size:1.4rem;">${pos}º</strong></td>
               <td>#${t.startOrder}</td>
               <td><strong>${t.r1}, ${t.r2}, ${t.r3}</strong></td>
               <td>${t.category}</td>
+              <td><span class="badge-status status-wait">Lote ${batchNum}</span></td>
               <td>${t.result.bois} boi(s)</td>
               <td><strong>${t.result.isSAT ? 'SAT' : t.result.time.toFixed(3) + 's'}</strong></td>
               <td>${isClassified ? '<span class="badge-status status-qualified">CLASSIFICADO</span>' : '-'}</td>
@@ -410,11 +418,18 @@
       container.innerHTML = html;
     }
 
-    // TELA 4: SEMIFINAL
+    // TELA 4: SEMIFINAL NO PAINEL
     function renderSemifinalScreen(container) {
-      const semiTrios = Object.entries(state.trios)
+      const categoryFilter = state.activePanel.category;
+      
+      let semiTrios = Object.entries(state.trios)
         .filter(([_, t]) => t.semiOrder)
         .sort((a, b) => a[1].semiOrder - b[1].semiOrder);
+
+      if (categoryFilter) {
+        const cats = categoryFilter.split(',').map(c => c.trim());
+        semiTrios = semiTrios.filter(([_, t]) => cats.includes(t.category));
+      }
 
       const pending = semiTrios.filter(([_, t]) => !t.semiResult);
       const current = pending[0];
@@ -434,8 +449,9 @@
           </div>`;
       }
 
-      const completed = Object.values(state.trios)
-        .filter(t => t.semiOrder && t.semiResult)
+      const completed = semiTrios
+        .map(([_, t]) => t)
+        .filter(t => t.semiResult)
         .sort((a, b) => {
           if (a.semiResult.bois !== b.semiResult.bois) return b.semiResult.bois - a.semiResult.bois;
           return a.semiResult.time - b.semiResult.time;
@@ -443,12 +459,13 @@
 
       html += `
         <div class="painel-table-container">
-          <h3 style="margin-top:0; color:#f59e0b; font-size: 1.4rem;">📊 RANKING PARCIAL DA SEMIFINAL</h3>
+          <h3 style="margin-top:0; color:#f59e0b; font-size: 1.4rem;">📊 RANKING PARCIAL DA SEMIFINAL ${categoryFilter ? `(${categoryFilter})` : ''}</h3>
           <table class="painel-table">
             <thead>
               <tr>
                 <th>Pos.</th>
                 <th>Trio</th>
+                <th>Categoria</th>
                 <th>1ª Passada</th>
                 <th>2ª Passada (Bois)</th>
                 <th>2ª Passada (Tempo)</th>
@@ -457,13 +474,14 @@
             <tbody>`;
 
       if (completed.length === 0) {
-        html += `<tr><td colspan="5" style="text-align:center;">Aguardando conclusões de corridas na semifinal.</td></tr>`;
+        html += `<tr><td colspan="6" style="text-align:center;">Aguardando conclusões de corridas na semifinal.</td></tr>`;
       } else {
         completed.forEach((t, idx) => {
           html += `
             <tr>
               <td><strong style="font-size:1.4rem; color:#f59e0b;">${idx + 1}º</strong></td>
               <td><strong>${t.r1}, ${t.r2}, ${t.r3}</strong></td>
+              <td>${t.category}</td>
               <td>${t.result.bois}b / ${t.result.time.toFixed(3)}s</td>
               <td>${t.semiResult.bois} boi(s)</td>
               <td><strong>${t.semiResult.isSAT ? 'SAT' : t.semiResult.time.toFixed(3) + 's'}</strong></td>
@@ -474,6 +492,9 @@
       html += `</tbody></table></div>`;
       container.innerHTML = html;
     }
+    
+
+    
 
     // TELA 5: GRANDE FINAL
     function renderGrandeFinalScreen(container) {
