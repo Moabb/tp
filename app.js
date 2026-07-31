@@ -1,3 +1,33 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDVZSlNvtLOER3YdotvGi-G7VvDtSQwV7M",
+  authDomain: "sistema-team-penning.firebaseapp.com",
+  databaseURL: "https://sistema-team-penning-default-rtdb.firebaseio.com",
+  projectId: "sistema-team-penning",
+  storageBucket: "sistema-team-penning.firebasestorage.app",
+  messagingSenderId: "1025888364244",
+  appId: "1:1025888364244:web:d4c5d0582899a855ddbd41"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let state = {
+  config: {
+    eventName: "",
+    batchSize: 25,
+    numBatteries: 2,
+    alertThreshold: 5,
+    qualifiedPerBatch: 10,
+    totalFinalists: 10,
+    totalAwarded: 5,
+    isSaved: false
+  },
+  trios: {}
+};
+
 // --- FUNÇÃO PARA ACTIVAR TELA NO PAINEL.HTML ---
 window.activarPainel = function(mode, category = '') {
   // Se a categoria não for passada explicitamente, busca a categoria selecionada na aba ativa
