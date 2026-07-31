@@ -14,7 +14,7 @@
       color: #ffffff;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       margin: 0;
-      padding: 15px;
+      padding: 5px;
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -24,10 +24,11 @@
 
     /* 1. TOPO: Identificação da Competição e Fase */
     .header-block {
+      width: 50%;
       background: #000000;
       border: 2px solid #334155;
       border-radius: 8px;
-      padding: 10px 20px;
+      padding: 5px 20px;
       text-align: center;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     }
@@ -51,10 +52,11 @@
 
     /* 2. TRIO EM PISTA */
     .pista-block {
+      width: 50%;
       background: #000000;
       border: 3px solid #2563eb;
       border-radius: 8px;
-      padding: 12px 20px;
+      padding: 5px 20px;
       text-align: center;
       box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
     }
@@ -68,10 +70,10 @@
     }
 
     .pista-names {
-      font-size: 2.2rem;
+      font-size: 1.6rem;
       font-weight: 900;
       color: #ffffff;
-      margin: 4px 0;
+      margin: 0px 0;
       text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
 
@@ -120,7 +122,7 @@
       border: 2px solid #334155;
       border-radius: 8px;
       padding: 10px;
-      height: 180px;
+      height: 280px;
       display: flex;
       flex-direction: column;
     }
@@ -178,28 +180,38 @@
       color: #64748b;
       text-align: center;
     }
+
+    .topbar {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- 1. TOPO: Identificação da Competição e Fase -->
-  <header class="header-block">
-    <h1 class="header-title" id="panel-event-title">🏁 TEAM PENNING</h1>
-    <div class="header-subtitle" id="panel-phase-title">AGUARDANDO ATIVAÇÃO DO PAINEL...</div>
-  </header>
+  <div class="topbar">
+    <!-- 1. TOPO: Identificação da Competição e Fase -->
+    <header class="header-block">
+      <h1 class="header-title" id="panel-event-title">🏁 TEAM PENNING</h1>
+      <div class="header-subtitle" id="panel-phase-title">AGUARDANDO ATIVAÇÃO DO PAINEL...</div>
+    </header>
+
+    <!-- 2. TRIO EM PISTA -->
+      <section class="pista-block">
+        <div class="pista-label">🤠 TRIO EM PISTA AGORA</div>
+        <div class="pista-names" id="current-trio-names">Nenhum trio na pista</div>
+        <div class="pista-details">
+          <span><strong>Ordem:</strong> <span id="current-trio-order">--</span></span>
+          <span><strong>Senha:</strong> <span id="current-trio-senha">--</span></span>
+          <span><strong>Lote de Gado:</strong> <span id="current-trio-lote">--</span></span>
+        </div>
+      </section>
+    </div>
 
   <main id="main-content" style="display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;">
     
-    <!-- 2. TRIO EM PISTA -->
-    <section class="pista-block">
-      <div class="pista-label">🤠 TRIO EM PISTA AGORA</div>
-      <div class="pista-names" id="current-trio-names">Nenhum trio na pista</div>
-      <div class="pista-details">
-        <span><strong>Ordem:</strong> <span id="current-trio-order">--</span></span>
-        <span><strong>Senha:</strong> <span id="current-trio-senha">--</span></span>
-        <span><strong>Lote de Gado:</strong> <span id="current-trio-lote">--</span></span>
-      </div>
-    </section>
+    
 
     <!-- 3. CLASSIFICAÇÃO DAS BATERIAS EM TEMPO REAL (2 COLUNAS) -->
     <section class="middle-grid">
