@@ -160,6 +160,17 @@
     const txtTotalSelecionados = document.getElementById("txtTotalSelecionados");
     const btnGerar = document.getElementById("btnGerar");
 
+    // Função de sanitização XSS
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "./index.html";
@@ -202,7 +213,7 @@
           competicoesCache[docSnap.id] = comp;
 
           const option = document.createElement("option");
-          option.value = docSnap.id;
+          option.value = escapeHTML(docSnap.id);
           option.textContent = `${comp.nome} (${comp.dataInicio})`;
           selectCompeticao.appendChild(option);
         });
@@ -293,10 +304,14 @@
 
           let linhasTabela = "";
           triosClassificados.forEach(trio => {
+            const integrantesFormatados = trio.integrantes 
+              ? trio.integrantes.map(i => escapeHTML(i)).join(" / ") 
+              : "N/D";
+
             linhasTabela += `
               <tr>
-                <td><strong>#${trio.posicao}</strong></td>
-                <td>${trio.integrantes ? trio.integrantes.join(" / ") : "N/D"}</td>
+                <td><strong>#${escapeHTML(trio.posicao)}</strong></td>
+                <td>${integrantesFormatados}</td>
                 <td>${parseFloat(trio.tempo).toFixed(2)}s</td>
               </tr>
             `;
@@ -306,8 +321,8 @@
             <div style="background: #1e1e1e; padding: 10px; border-radius: 6px; border: 1px solid #333;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                 <label style="font-weight:bold; color:var(--accent-gold); cursor:pointer; display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" class="checkbox-bateria" data-doc-id="${item.id}" data-bat-key="${batKey}">
-                  Incluir na Semifinal - Bat. ${numeroBateria} (${triosClassificados.length} Trios)
+                  <input type="checkbox" class="checkbox-bateria" data-doc-id="${escapeHTML(item.id)}" data-bat-key="${escapeHTML(batKey)}">
+                  Incluir na Semifinal - Bat. ${escapeHTML(numeroBateria)} (${triosClassificados.length} Trios)
                 </label>
               </div>
               <table class="tabela-classificados">
@@ -322,8 +337,8 @@
 
         divBox.innerHTML = `
           <h3>
-            <span>${item.categoria}</span>
-            <small style="font-size:0.85rem; color:var(--accent-gold);">Data: ${item.dataCategoria || '--'}</small>
+            <span>${escapeHTML(item.categoria)}</span>
+            <small style="font-size:0.85rem; color:var(--accent-gold);">Data: ${escapeHTML(item.dataCategoria || '--')}</small>
           </h3>
           <div class="grid-baterias">
             ${htmlBaterias}
@@ -369,6 +384,11 @@
     document.getElementById("formGerarSemi").addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      if (!currentUser) {
+        alert("Sua sessão expirou. Por favor, faça login novamente.");
+        return;
+      }
+
       if (triosUnificadosSelecionados.length === 0) {
         alert("Selecione ao menos uma bateria para gerar a Semifinal!");
         return;
@@ -392,6 +412,10 @@
         const compRef = doc(db, "competicoes", compId);
         const compSnap = await getDoc(compRef);
         
+        if (!compSnap.exists() || compSnap.data().organizadorId !== currentUser.uid) {
+          throw new Error("Você não tem permissão para alterar esta competição.");
+        }
+
         let categoriasAtuais = [];
         if (compSnap.exists() && compSnap.data().categorias) {
           categoriasAtuais = compSnap.data().categorias;
