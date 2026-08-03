@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Assinaturas - Super Admin</title>
+  <script type="module" src="./firebase-config.js"></script>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-gold: #ffb703;
+      --accent-green: #2a9d8f;
+      --accent-red: #e76f51;
+      --text-light: #f8f9fa;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+    header h1 { color: var(--accent-gold); font-size: 1.6rem; text-transform: uppercase; }
+
+    .btn-action { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; }
+    .btn-action:hover { opacity: 0.9; }
+
+    .secao-card { background: var(--card-bg); border-radius: 8px; padding: 25px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    
+    /* CARTÃO DO MONETIZADOR GLOBAL */
+    .card-global { display: flex; justify-content: space-between; align-items: center; background: #262626; padding: 20px; border-radius: 8px; border-left: 5px solid var(--accent-gold); }
+    .card-global h3 { margin-bottom: 5px; color: var(--accent-gold); }
+    .card-global p { color: #ccc; font-size: 0.9rem; }
+
+    /* TOGGLE SWITCH */
+    .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--accent-green); }
+    input:checked + .slider:before { transform: translateX(26px); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left; }
+    th, td { padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+    th { color: var(--accent-gold); background: #262626; }
+    tr:hover { background: #262626; }
+
+    .badge-status { padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; }
+    .badge-gratis { background: #555; color: #fff; }
+    .badge-pago { background: var(--accent-green); color: #fff; }
+
+    .btn-toggle { border: none; padding: 8px 14px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-liberar { background: var(--accent-green); color: #fff; }
+    .btn-bloquear { background: var(--accent-red); color: #fff; }
+
+    /* MODAL DE LOGIN ADMIN */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .modal-box { background: var(--card-bg); padding: 30px; border-radius: 10px; border: 1px solid var(--accent-gold); width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    .modal-box h2 { color: var(--accent-gold); margin-bottom: 20px; font-size: 1.3rem; text-align: center; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
+    .form-group input { width: 100%; padding: 10px; background: #121212; border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 1rem; }
+    .btn-login { width: 100%; padding: 12px; background: var(--accent-gold); border: none; border-radius: 6px; font-weight: bold; color: #000; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- MODAL DE AUTENTICAÇÃO -->
+  <div id="modalLoginAdmin" class="modal-overlay">
+    <div class="modal-box">
+      <h2>🔒 AUTENTICAÇÃO MASTER</h2>
+      <form id="formLoginAdmin">
+        <div class="form-group">
+          <label for="adminEmail">E-mail</label>
+          <input type="email" id="adminEmail" required placeholder="seu-email@admin.com">
+        </div>
+        <div class="form-group">
+          <label for="adminSenha">Senha</label>
+          <input type="password" id="adminSenha" required placeholder="••••••••">
+        </div>
+        <button type="submit" id="btnSubmitLogin" class="btn-login">Entrar no Painel</button>
+      </form>
+    </div>
+  </div>
+
+  <header>
+    <h1>👑 GESTÃO DE ASSINATURAS E PROVAS (SUPER ADMIN)</h1>
+    <button class="btn-action" onclick="window.location.href='./cadastro.html'">🔙 VOLTAR</button>
+  </header>
+
+  <main>
+    <!-- PAINEL DE CONTROLE GLOBAL DA COBRANÇA -->
+    <section class="secao-card card-global">
+      <div>
+        <h3>⚡ MODO DE COBRANÇA GLOBAL DO SISTEMA</h3>
+        <p id="txtStatusGlobal">Carregando status global do sistema...</p>
+        
+        <!-- CAMPO PARA DEFINIR O LIMITE DE SENHAS -->
+        <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+          <label for="inputLimiteSenhas" style="font-size: 0.9rem; color: #ccc;">Limite Gratuito de Senhas:</label>
+          <input type="number" id="inputLimiteSenhas" value="100" min="1" style="width: 90px; padding: 6px 10px; background: #121212; border: 1px solid var(--border-color); color: #fff; border-radius: 4px; font-weight: bold;">
+          <button id="btnSalvarLimite" class="btn-action" style="padding: 6px 12px; font-size: 0.85rem;">Salvar Limite</button>
+        </div>
+      </div>
+
+      <label class="switch">
+        <input type="checkbox" id="toggleCobrancaGlobal">
+        <span class="slider"></span>
+      </label>
+    </section>
+
+    <!-- TABELA DE COMPETIÇÕES E LIBERAÇÕES INDIVIDUAIS -->
+    <section class="secao-card">
+      <h2>COMPETIÇÕES CADASTRADAS NO SISTEMA</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Competição</th>
+            <th>Data</th>
+            <th>ID do Organizador</th>
+            <th>Total de Senhas</th>
+            <th>Status Assinatura</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaAssinaturas">
+          <tr>
+            <td colspan="6" style="text-align: center; color: #888;">Aguardando autenticação...</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module">
+  import { 
+    auth, 
+    db, 
+    collection, 
+    getDocs, 
+    getDoc,
+    setDoc,
+    doc, 
+    updateDoc, 
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signOut
+  } from "./firebase-config.js";
+
+  const ADMIN_UID = "Cd4J21mv9RboRNLw7tcYVlcG1Pj2";
+
+  const modal = document.getElementById("modalLoginAdmin");
+  const formLogin = document.getElementById("formLoginAdmin");
+  const toggleGlobal = document.getElementById("toggleCobrancaGlobal");
+  const txtStatusGlobal = document.getElementById("txtStatusGlobal");
+  const inputLimiteSenhas = document.getElementById("inputLimiteSenhas");
+  const btnSalvarLimite = document.getElementById("btnSalvarLimite");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user && user.uid === ADMIN_UID) {
+      modal.style.display = "none";
+      await carregarStatusGlobal();
+      await carregarPainelAssinaturas();
+    } else {
+      if (user && user.uid !== ADMIN_UID) {
+        alert("Acesso negado! Esta conta não é o Super Admin.");
+        await signOut(auth);
+      }
+      modal.style.display = "flex";
+    }
+  });
+
+  formLogin.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("adminEmail").value.trim();
+    const senha = document.getElementById("adminSenha").value;
+    const btn = document.getElementById("btnSubmitLogin");
+
+    try {
+      btn.disabled = true;
+      btn.innerText = "Autenticando...";
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+      if (userCredential.user.uid !== ADMIN_UID) {
+        alert("Conta não autorizada para acessar o Painel Master.");
+        await signOut(auth);
+      }
+    } catch (error) {
+      console.error("Erro no login:", error);
+      alert("Falha ao entrar: " + error.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = "Entrar no Painel";
+    }
+  });
+
+  // Carrega estado da chave global e o limite configurado
+  async function carregarStatusGlobal() {
+    try {
+      const configDoc = await getDoc(doc(db, "configuracoesGlobal", "sistema"));
+      const data = configDoc.exists() ? configDoc.data() : {};
+      const cobrancaAtiva = data.cobrancaAtiva === true;
+      const limiteSenhas = data.limiteSenhas || 100;
+      
+      toggleGlobal.checked = cobrancaAtiva;
+      inputLimiteSenhas.value = limiteSenhas;
+      atualizarTextoStatusGlobal(cobrancaAtiva, limiteSenhas);
+    } catch (error) {
+      console.error("Erro ao carregar configuracao global:", error);
+    }
+  }
+
+  function atualizarTextoStatusGlobal(ativa, limite) {
+    if (ativa) {
+      txtStatusGlobal.innerHTML = `<b style='color: var(--accent-green);'>SISTEMA EM MODO PAGO:</b> O limitador de <b>${limite} senhas</b> está ATIVO para provas não liberadas.`;
+    } else {
+      txtStatusGlobal.innerHTML = "<b style='color: var(--accent-gold);'>SISTEMA 100% GRÁTIS:</b> Todas as competições possuem senhas ilimitadas sem bloqueio.";
+    }
+  }
+
+  // Salvar novo limite de senhas
+  btnSalvarLimite.addEventListener("click", async () => {
+    const novoLimite = parseInt(inputLimiteSenhas.value) || 100;
+    try {
+      await setDoc(doc(db, "configuracoesGlobal", "sistema"), {
+        limiteSenhas: novoLimite,
+        atualizadoEm: new Date()
+      }, { merge: true });
+
+      alert(`Limite configurado para ${novoLimite} senhas com sucesso!`);
+      await carregarStatusGlobal();
+      await carregarPainelAssinaturas();
+    } catch (error) {
+      console.error("Erro ao salvar limite:", error);
+      alert("Erro ao salvar limite: " + error.message);
+    }
+  });
+
+  // Alteração do Switch Global
+  toggleGlobal.addEventListener("change", async (e) => {
+    const novoStatus = e.target.checked;
+    const limiteAtual = parseInt(inputLimiteSenhas.value) || 100;
+    try {
+      await setDoc(doc(db, "configuracoesGlobal", "sistema"), {
+        cobrancaAtiva: novoStatus,
+        atualizadoEm: new Date()
+      }, { merge: true });
+
+      atualizarTextoStatusGlobal(novoStatus, limiteAtual);
+      alert(novoStatus ? `Cobrança ATIVADA! A trava de ${limiteAtual} senhas agora está valendo.` : "Sistema colocado em modo 100% GRATUITO.");
+    } catch (error) {
+      console.error("Erro ao alterar configuracao global:", error);
+      alert("Erro ao salvar no Firestore: " + error.message);
+      e.target.checked = !novoStatus;
+    }
+  });
+
+  async function carregarPainelAssinaturas() {
+    const tabela = document.getElementById("tabelaAssinaturas");
+    tabela.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">Carregando dados...</td></tr>';
+
+    try {
+      const compSnap = await getDocs(collection(db, "competicoes"));
+      if (compSnap.empty) {
+        tabela.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">Nenhuma competição encontrada.</td></tr>';
+        return;
+      }
+
+      const triosSnap = await getDocs(collection(db, "trios"));
+      const contagemSenhas = {};
+
+      triosSnap.forEach(tDoc => {
+        const cId = tDoc.data().competicaoId;
+        if (cId) {
+          contagemSenhas[cId] = (contagemSenhas[cId] || 0) + 1;
+        }
+      });
+
+      tabela.innerHTML = "";
+
+      // Busca limite configurado
+      const limiteAtual = parseInt(inputLimiteSenhas.value) || 100;
+
+      compSnap.forEach(docSnap => {
+        const comp = docSnap.data();
+        const compId = docSnap.id;
+        const totalSenhas = contagemSenhas[compId] || 0;
+        const liberado = comp.assinaturaLiberada === true;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${comp.nome || "Sem Nome"}</strong></td>
+          <td>${comp.dataInicio || comp.data || "-"}</td>
+          <td><small style="color: #aaa;">${comp.organizadorId || "-"}</small></td>
+          <td><strong>${totalSenhas}</strong> senhas</td>
+          <td>
+            <span class="badge-status ${liberado ? 'badge-pago' : 'badge-gratis'}">
+              ${liberado ? 'PAGO / LIBERADO' : 'GRÁTIS (' + totalSenhas + '/' + limiteAtual + ')'}
+            </span>
+          </td>
+          <td>
+            <button class="btn-toggle ${liberado ? 'btn-bloquear' : 'btn-liberar'}" data-id="${compId}" data-status="${liberado}">
+              ${liberado ? 'Bloquear Limitador' : 'Liberar Prova (Paga)'}
+            </button>
+          </td>
+        `;
+        tabela.appendChild(tr);
+      });
+
+      document.querySelectorAll(".btn-toggle").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const cId = e.target.getAttribute("data-id");
+          const statusAtual = e.target.getAttribute("data-status") === "true";
+          await alternarLiberacao(cId, !statusAtual);
+        });
+      });
+
+    } catch (error) {
+      console.error("Erro ao carregar assinaturas:", error);
+      tabela.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #e76f51;">Erro ao carregar dados.</td></tr>';
+    }
+  }
+
+  async function alternarLiberacao(compId, novoStatus) {
+    try {
+      const compRef = doc(db, "competicoes", compId);
+      await updateDoc(compRef, {
+        assinaturaLiberada: novoStatus
+      });
+      alert(novoStatus ? "Competição LIBERADA com sucesso!" : "Competição retornada ao modo LIMITADO.");
+      await carregarPainelAssinaturas();
+    } catch (error) {
+      console.error("Erro ao alterar assinatura:", error);
+      alert("Erro de permissão no Firebase: " + error.message);
+    }
+  }
+</script>
+</body>
+</html>

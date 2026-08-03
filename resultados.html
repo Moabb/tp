@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados Oficiais - Team Penning</title>
+  <script type="module" src="./firebase-config.js"></script>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-gold: #ffb703;
+      --accent-green: #2a9d8f;
+      --accent-blue: #0077b6;
+      --accent-red: #e76f51;
+      --text-light: #f8f9fa;
+      --input-bg: #2b2b2b;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+    header h1 { color: var(--accent-gold); font-size: 1.6rem; text-transform: uppercase; }
+
+    .btn-action { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-action:hover { opacity: 0.9; }
+
+    .secao-card { background: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    .secao-card h2 { color: var(--accent-gold); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #ccc; margin-bottom: 5px; }
+    .form-group select { width: 100%; max-width: 400px; padding: 10px; background: var(--input-bg); border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.95rem; }
+
+    .tabs-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; }
+    .btn-tab { background: #262626; color: #aaa; border: 1px solid #444; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-tab.active { background: var(--accent-gold); color: #000; border-color: var(--accent-gold); }
+
+    .grid-resultados { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+
+    .card-categoria { background: #262626; border-radius: 8px; border: 1px solid #444; overflow: hidden; }
+    .card-categoria-header { background: #1a1a1a; padding: 12px 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+    .card-categoria-header h3 { color: var(--accent-gold); font-size: 1rem; }
+
+    .tabela-resultados { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+    .tabela-resultados th, .tabela-resultados td { padding: 10px 12px; border-bottom: 1px solid #333; }
+    .tabela-resultados th { background: #1e1e1e; color: #aaa; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+    .tabela-resultados tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .posicao { font-weight: bold; width: 40px; text-align: center; }
+    .pos-1 { color: #ffd700; font-size: 1rem; } /* Ouro */
+    .pos-2 { color: #c0c0c0; font-size: 1rem; } /* Prata */
+    .pos-3 { color: #cd7f32; font-size: 1rem; } /* Bronze */
+
+    .trios-integrantes { color: #ccc; font-weight: bold; }
+    .trios-cavalos { display: block; font-size: 0.75rem; color: #888; margin-top: 2px; }
+    .tempo-destaque { color: var(--accent-green); font-weight: bold; font-family: monospace; font-size: 0.9rem; }
+
+    .badge-status { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+    .badge-classificado { background: rgba(42, 157, 143, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-sat { background: rgba(231, 111, 81, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+    .no-data { padding: 20px; text-align: center; color: #888; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🏆 RESULTADOS OFICIAIS</h1>
+    <div id="areaBotoesHeader">
+      <a href="./config.html" class="btn-action" id="btnConfig">⚙️ PAINEL CONFIG</a>
+      <a href="./admin.html" class="btn-action" id="btnAdmin">⏱️ AO VIVO / ADMIN</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="secao-card">
+      <div class="form-group" style="margin: 0;">
+        <label for="selectCompeticao">Selecione a Competição:</label>
+        <select id="selectCompeticao">
+          <option value="">Carregando competições...</option>
+        </select>
+      </div>
+    </section>
+
+    <div class="tabs-nav">
+      <button class="btn-tab active" data-fase="classificatoria">📋 Classificatórias</button>
+      <button class="btn-tab" data-fase="semifinal">🔥 Semifinais</button>
+      <button class="btn-tab" data-fase="final">🏆 Grande Final</button>
+    </div>
+
+    <div id="containerResultados" class="grid-resultados">
+      <p style="color: #888; grid-column: 1 / -1;">Selecione uma competição acima para visualizar os resultados.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { 
+      auth, 
+      db, 
+      collection, 
+      getDocs, 
+      doc, 
+      getDoc, 
+      query, 
+      where, 
+      onAuthStateChanged 
+    } from "./firebase-config.js";
+
+    let currentUser = null;
+    let competicaoAtual = null;
+    let faseAtual = "classificatoria";
+
+    const selectCompeticao = document.getElementById("selectCompeticao");
+    const containerResultados = document.getElementById("containerResultados");
+    const tabButtons = document.querySelectorAll(".btn-tab");
+    const btnConfig = document.getElementById("btnConfig");
+    const btnAdmin = document.getElementById("btnAdmin");
+
+    // Captura o ID da competição caso venha pela URL (ex: resultados.html?compId=XYZ)
+    const urlParams = new URLSearchParams(window.location.search);
+    const compIdUrl = urlParams.get('compId');
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+
+      if (!currentUser) {
+        // Se for um visitante público (não logado), esconde botões administrativos do topo
+        if (btnConfig) btnConfig.style.display = "none";
+        if (btnAdmin) btnAdmin.style.display = "none";
+      }
+
+      await inicializarPagina();
+    });
+
+    async function inicializarPagina() {
+      if (compIdUrl) {
+        // Se tem ID na URL, busca essa competição diretamente
+        await carregarCompeticaoPorId(compIdUrl);
+      } else if (currentUser) {
+        // Se está logado e sem ID na URL, carrega as competições do organizador
+        await carregarCompeticoesOrganizador();
+      } else {
+        // Se for visitante sem ID na URL, busca todas as competições recentes disponíveis
+        await carregarTodasCompeticoesPublicas();
+      }
+    }
+
+    // Troca de Abas (Fases)
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        faseAtual = btn.dataset.fase;
+        exibirResultados();
+      });
+    });
+
+    selectCompeticao.addEventListener("change", (e) => {
+      const id = e.target.value;
+      if (id) {
+        localStorage.setItem("selectedCompId", id);
+        carregarDadosCompeticao(id);
+      } else {
+        containerResultados.innerHTML = `<p style="color: #888; grid-column: 1 / -1;">Selecione uma competição para visualizar os resultados.</p>`;
+      }
+    });
+
+    async function carregarCompeticaoPorId(compId) {
+      try {
+        const compRef = doc(db, "competicoes", compId);
+        const compSnap = await getDoc(compRef);
+
+        if (compSnap.exists()) {
+          const comp = compSnap.data();
+          selectCompeticao.innerHTML = `<option value="${compSnap.id}" selected>${comp.nome} (${comp.dataInicio})</option>`;
+          competicaoAtual = { id: compSnap.id, ...comp };
+          exibirResultados();
+        } else {
+          selectCompeticao.innerHTML = `<option value="">Competição não encontrada</option>`;
+          containerResultados.innerHTML = `<p style="color: #e76f51; grid-column: 1 / -1;">A competição solicitada não foi encontrada.</p>`;
+        }
+      } catch (error) {
+        console.error("Erro ao carregar competição por ID:", error);
+      }
+    }
+
+    async function carregarCompeticoesOrganizador() {
+      try {
+        const q = query(
+          collection(db, "competicoes"),
+          where("organizadorId", "==", currentUser.uid)
+        );
+        const snapshot = await getDocs(q);
+
+        preencherSelectCompeticoes(snapshot);
+      } catch (error) {
+        console.error("Erro ao carregar competições do organizador:", error);
+      }
+    }
+
+    async function carregarTodasCompeticoesPublicas() {
+      try {
+        const snapshot = await getDocs(collection(db, "competicoes"));
+        preencherSelectCompeticoes(snapshot);
+      } catch (error) {
+        console.error("Erro ao carregar competições públicas:", error);
+      }
+    }
+
+    function preencherSelectCompeticoes(snapshot) {
+      if (snapshot.empty) {
+        selectCompeticao.innerHTML = `<option value="">Nenhuma competição cadastrada</option>`;
+        return;
+      }
+
+      selectCompeticao.innerHTML = `<option value="">Selecione uma competição...</option>`;
+      const compSalvaId = localStorage.getItem("selectedCompId");
+
+      snapshot.forEach(docSnap => {
+        const comp = docSnap.data();
+        const option = document.createElement("option");
+        option.value = docSnap.id;
+        option.textContent = `${comp.nome} (${comp.dataInicio})`;
+        
+        if (compSalvaId && compSalvaId === docSnap.id) {
+          option.selected = true;
+        }
+        selectCompeticao.appendChild(option);
+      });
+
+      if (selectCompeticao.value) {
+        carregarDadosCompeticao(selectCompeticao.value);
+      }
+    }
+
+    async function carregarDadosCompeticao(compId) {
+      containerResultados.innerHTML = `<p style="color: #888; grid-column: 1 / -1;">Buscando resultados no banco de dados...</p>`;
+      
+      try {
+        const compRef = doc(db, "competicoes", compId);
+        const compSnap = await getDoc(compRef);
+
+        if (compSnap.exists()) {
+          competicaoAtual = { id: compSnap.id, ...compSnap.data() };
+          exibirResultados();
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados da competição:", error);
+        containerResultados.innerHTML = `<p style="color: #e76f51; grid-column: 1 / -1;">Erro ao carregar os resultados da competição.</p>`;
+      }
+    }
+
+    async function exibirResultados() {
+      if (!competicaoAtual) return;
+
+      containerResultados.innerHTML = "";
+      const categorias = competicaoAtual.categorias || [];
+
+      if (categorias.length === 0) {
+        containerResultados.innerHTML = `<p style="color: #888; grid-column: 1 / -1;">Nenhuma categoria encontrada para esta competição.</p>`;
+        return;
+      }
+
+      let faseBanco = "CLASSIFICACAO";
+      let tituloFase = "Classificatórias";
+
+      if (faseAtual === "semifinal") {
+        faseBanco = "SEMIFINAL";
+        tituloFase = "Semifinal";
+      } else if (faseAtual === "final") {
+        faseBanco = "FINAL";
+        tituloFase = "Grande Final";
+      }
+
+      let triosDocs = [];
+      try {
+        const qTrios = query(
+          collection(db, "trios"),
+          where("competicaoId", "==", competicaoAtual.id)
+        );
+        const snapshot = await getDocs(qTrios);
+        snapshot.forEach(d => triosDocs.push({ id: d.id, ...d.data() }));
+      } catch (err) {
+        console.warn("Erro ao buscar a coleção de trios:", err);
+      }
+
+      for (const cat of categorias) {
+        const resultadosCat = triosDocs.filter(i => {
+          const faseTrio = i.fase || "CLASSIFICACAO";
+          const tempoOk = (i.status === "OK" && i.tempo !== null && i.tempo !== undefined) || i.status === "SAT" || i.status === "DO";
+          return i.categoria === cat.nome && faseTrio === faseBanco && tempoOk;
+        });
+
+        resultadosCat.sort((a, b) => {
+          if (a.status === "OK" && b.status === "OK") {
+            return parseFloat(a.tempo) - parseFloat(b.tempo);
+          }
+          if (a.status === "OK") return -1;
+          if (b.status === "OK") return 1;
+          return 0;
+        });
+
+        let htmlLinhas = "";
+
+        if (resultadosCat.length === 0) {
+          htmlLinhas = `<tr><td colspan="4" class="no-data">Nenhum resultado registrado nesta fase.</td></tr>`;
+        } else {
+          resultadosCat.forEach((item, index) => {
+            const pos = index + 1;
+            let classePos = "";
+            if (pos === 1) classePos = "pos-1";
+            else if (pos === 2) classePos = "pos-2";
+            else if (pos === 3) classePos = "pos-3";
+
+            const cavaleiros = Array.isArray(item.integrantes) ? item.integrantes.join(" / ") : (item.integrantes || "Trio não informado");
+            const animais = item.animais || "";
+
+            let textoTempo = "--";
+            let badgeHtml = "-";
+
+            if (item.status === "OK" && item.tempo) {
+              textoTempo = `${parseFloat(item.tempo).toFixed(2)}s`;
+              const limiteClassificados = cat.classificadosPorBateria || 3;
+              if (pos <= limiteClassificados) {
+                badgeHtml = '<span class="badge-status badge-classificado">Classificado</span>';
+              }
+            } else if (item.status === "SAT") {
+              textoTempo = "SAT";
+              badgeHtml = '<span class="badge-status badge-sat">S.A.T</span>';
+            } else if (item.status === "DO") {
+              textoTempo = "D.O.";
+              badgeHtml = '<span class="badge-status badge-sat">D.O.</span>';
+            }
+
+            htmlLinhas += `
+              <tr>
+                <td class="posicao ${classePos}">${pos}º</td>
+                <td>
+                  <span class="trios-integrantes">${cavaleiros}</span>
+                  ${animais ? `<span class="trios-cavalos">🐴 ${animais}</span>` : ''}
+                </td>
+                <td class="tempo-destaque">${textoTempo}</td>
+                <td>${badgeHtml}</td>
+              </tr>
+            `;
+          });
+        }
+
+        const cardCat = document.createElement("div");
+        cardCat.className = "card-categoria";
+
+        cardCat.innerHTML = `
+          <div class="card-categoria-header">
+            <h3>${cat.nome} ${cat.isFeminino ? '♀️' : ''}</h3>
+            <span style="font-size: 0.75rem; color: #888;">${tituloFase}</span>
+          </div>
+          <table class="tabela-resultados">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Trio / Animais</th>
+                <th>Tempo</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${htmlLinhas}
+            </tbody>
+          </table>
+        `;
+
+        containerResultados.appendChild(cardCat);
+      }
+    }
+  </script>
+</body>
+</html>

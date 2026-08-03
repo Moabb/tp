@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Configurações da Prova</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+    .card { background: white; padding: 20px; border-radius: 5px; max-width: 500px; }
+    input, button { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
+    button { background: #17a2b8; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Configurações do Evento</h2>
+    <label for="nomeEvento">Nome da Competição / Evento:</label>
+    <input type="text" id="nomeEvento" placeholder="Ex: Prova de Laço Semanal">
+    
+    <button id="btnSalvar">Salvar Configuração</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        carregarConfiguracao();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    async function carregarConfiguracao() {
+      try {
+        const docRef = doc(db, "configuracoes", currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          document.getElementById("nomeEvento").value = docSnap.data().nomeEvento || "";
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err);
+      }
+    }
+
+    document.getElementById("btnSalvar").addEventListener("click", async () => {
+      const nomeEvento = document.getElementById("nomeEvento").value.trim();
+
+      if (!nomeEvento) {
+        alert("Preencha o nome do evento.");
+        return;
+      }
+
+      try {
+        await setDoc(doc(db, "configuracoes", currentUser.uid), {
+          nomeEvento: nomeEvento,
+          organizadorId: currentUser.uid,
+          atualizadoEm: new Date()
+        }, { merge: true });
+
+        alert("Configuração salva com sucesso!");
+      } catch (err) {
+        alert("Erro ao salvar: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

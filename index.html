@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Oficial - Team Penning System</title>
+  
+  <!-- Script Oficial do Google reCAPTCHA v2 -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script type="module" src="./firebase-config.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-gold: #ffb703;
+      --accent-green: #2a9d8f;
+      --accent-red: #e76f51;
+      --text-light: #f8f9fa;
+      --input-bg: #2b2b2b;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 30px; }
+    header h1 { color: var(--accent-gold); font-size: 1.8rem; text-transform: uppercase; }
+
+    .btn-top { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .btn-top:hover { background: #e0a200; }
+
+    .portal-container { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+    @media (max-width: 850px) { .portal-container { grid-template-columns: 1fr; } }
+
+    .secao-card { background: var(--card-bg); border-radius: 8px; padding: 25px; border: 1px solid var(--border-color); }
+    
+    /* NAVEGAÇÃO POR ABAS */
+    .abas-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+    .btn-aba { background: #262626; color: #aaa; border: 1px solid var(--border-color); padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
+    .btn-aba.ativa { background: var(--accent-gold); color: #000; border-color: var(--accent-gold); }
+    .btn-aba:hover:not(.ativa) { background: #333; color: #fff; }
+
+    .grid-provas { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
+    
+    .card-prova { background: #262626; border-radius: 6px; padding: 16px; border-left: 4px solid var(--accent-green); transition: 0.2s; cursor: pointer; }
+    .card-prova:hover { transform: translateY(-3px); background: #2f2f2f; }
+    .card-prova.encerrada { border-left-color: #777; opacity: 0.85; }
+    .card-prova.encerrada:hover { opacity: 1; }
+
+    .card-prova h3 { font-size: 1.1rem; color: #fff; margin-bottom: 6px; text-transform: uppercase; }
+    .card-prova p { font-size: 0.85rem; color: #ccc; margin-bottom: 4px; }
+    
+    .badge-status { display: inline-block; background: var(--accent-green); color: #fff; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; margin-top: 8px; }
+    .badge-status.encerrado { background: #555; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #ccc; margin-bottom: 5px; }
+    .form-group input { width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid #444; border-radius: 4px; color: #fff; }
+
+    .btn-submit { width: 100%; padding: 12px; background: var(--accent-green); color: #fff; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+    .btn-submit:hover { opacity: 0.9; }
+
+    .btn-logout { width: 100%; padding: 12px; background: var(--accent-red); color: #fff; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+    .btn-logout:hover { opacity: 0.9; }
+
+    .toggle-auth { text-align: center; margin-top: 15px; font-size: 0.85rem; color: #aaa; }
+    .toggle-auth a { color: var(--accent-gold); text-decoration: underline; cursor: pointer; }
+    
+    .msg-erro { color: var(--accent-red); font-size: 0.85rem; margin-top: 10px; text-align: center; display: none; }
+    .recaptcha-wrapper { margin: 15px 0; display: flex; justify-content: center; }
+
+    .user-logged-info { text-align: center; padding: 10px 0; }
+    .user-logged-info p { margin-bottom: 15px; font-size: 0.95rem; color: #ddd; }
+    .user-logged-info strong { color: var(--accent-gold); display: block; margin-top: 5px; font-size: 1.05rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🏆 SISTEMA TEAM PENNING</h1>
+    <button class="btn-top" id="btnAbrirLogin">CRIAR COMPETIÇÃO / PAINEL</button>
+  </header>
+
+  <main class="portal-container">
+    
+    <!-- SEÇÃO DE COMPETIÇÕES PUBLICAS -->
+    <section class="secao-card">
+      <div class="abas-container">
+        <button class="btn-aba ativa" id="abaEmAndamento">🔴 PROVAS EM ANDAMENTO</button>
+        <button class="btn-aba" id="abaFinalizadas">🏁 PROVAS FINALIZADAS</button>
+      </div>
+
+      <div class="grid-provas" id="containerProvas">
+        <p style="color: #888; grid-column: 1/-1;">Carregando competições...</p>
+      </div>
+    </section>
+
+    <!-- ÁREA DE AUTENTICAÇÃO / PERFIL -->
+    <section class="secao-card" id="boxAuth">
+      <h2 id="tituloAuth">ENTRAR NA CONTA</h2>
+      
+      <!-- Bloco Deslogado -->
+      <div id="wrapperDeslogado">
+        <form id="formAuth">
+          
+          <div class="form-group" id="groupTelefone" style="display: none;">
+            <label for="authTelefone">Número do Celular (com DDD):</label>
+            <input type="tel" id="authTelefone" placeholder="(00) 90000-0000">
+          </div>
+
+          <div class="form-group">
+            <label for="authEmail">E-mail de Acesso:</label>
+            <input type="email" id="authEmail" placeholder="seu@email.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="authSenha">Senha (mínimo 6 caracteres):</label>
+            <input type="password" id="authSenha" placeholder="******" required minlength="6">
+          </div>
+
+          <div class="recaptcha-wrapper">
+            <div class="g-recaptcha" data-sitekey="6Ldu9F0tAAAAAHuDpejqqNSKpFDByhAt3WX14vZ0"></div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btnAuthSubmit">Acessar Painel</button>
+          <div class="msg-erro" id="msgErro"></div>
+        </form>
+
+        <div class="toggle-auth">
+          <span id="textoToggle">Não possui conta?</span> 
+          <a id="linkToggle">Criar nova conta</a>
+        </div>
+      </div>
+
+      <!-- Bloco Logado -->
+      <div id="wrapperLogado" style="display: none;">
+        <div class="user-logged-info">
+          <p>Você está conectado como: <strong id="lblEmailUsuario">carregando...</strong></p>
+          <button class="btn-submit" onclick="window.location.href='./config.html'">IR PARA O GERENCIADOR</button>
+          <button class="btn-logout" id="btnSairConta">SAIR DA CONTA</button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { 
+      auth, 
+      db,
+      doc,
+      setDoc,
+      collection,
+      getDocs,
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      onAuthStateChanged,
+      signOut
+    } from "./firebase-config.js";
+
+    let modoCadastro = false;
+    let abaAtual = "ANDAMENTO"; // "ANDAMENTO" ou "FINALIZADAS"
+    let listaCompeticoes = [];
+
+    const linkToggle = document.getElementById("linkToggle");
+    const tituloAuth = document.getElementById("tituloAuth");
+    const groupTelefone = document.getElementById("groupTelefone");
+    const btnAuthSubmit = document.getElementById("btnAuthSubmit");
+    const textoToggle = document.getElementById("textoToggle");
+    const msgErro = document.getElementById("msgErro");
+
+    const wrapperDeslogado = document.getElementById("wrapperDeslogado");
+    const wrapperLogado = document.getElementById("wrapperLogado");
+    const lblEmailUsuario = document.getElementById("lblEmailUsuario");
+    const btnSairConta = document.getElementById("btnSairConta");
+
+    const containerProvas = document.getElementById("containerProvas");
+    const abaEmAndamento = document.getElementById("abaEmAndamento");
+    const abaFinalizadas = document.getElementById("abaFinalizadas");
+
+    async function carregarProvasGerais() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "competicoes"));
+        listaCompeticoes = [];
+
+        querySnapshot.forEach((docSnap) => {
+          listaCompeticoes.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        renderizarProvas();
+      } catch (error) {
+        console.error("Erro ao carregar provas:", error);
+        containerProvas.innerHTML = '<p style="color: #e76f51; grid-column: 1/-1;">Erro ao carregar competições.</p>';
+      }
+    }
+
+    function renderizarProvas() {
+      containerProvas.innerHTML = "";
+
+      const filtradas = listaCompeticoes.filter(c => {
+        const estaEncerrada = c.status === "ENCERRADA" || c.status === "FINALIZADA";
+        return abaAtual === "ANDAMENTO" ? !estaEncerrada : estaEncerrada;
+      });
+
+      if (filtradas.length === 0) {
+        const msg = abaAtual === "ANDAMENTO" 
+          ? "Nenhuma competição em andamento no momento." 
+          : "Nenhuma competição finalizada encontrada.";
+        containerProvas.innerHTML = `<p style="color: #888; grid-column: 1/-1;">${msg}</p>`;
+        return;
+      }
+
+      filtradas.forEach(comp => {
+        const card = document.createElement("div");
+        const estaEncerrada = comp.status === "ENCERRADA" || comp.status === "FINALIZADA";
+        
+        card.className = `card-prova ${estaEncerrada ? 'encerrada' : ''}`;
+        
+        const qtdCats = comp.categorias ? comp.categorias.length : 0;
+        const textoData = comp.dataInicio || comp.data || "Data não inf.";
+
+        card.innerHTML = `
+          <h3>${comp.nome || "Competição"}</h3>
+          <p>📅 Data: ${textoData}</p>
+          <p>🏷️ Categorias: ${qtdCats}</p>
+          <span class="badge-status ${estaEncerrada ? 'encerrado' : ''}">
+            ${estaEncerrada ? '🏁 FINALIZADA' : '🟢 AO VIVO'}
+          </span>
+        `;
+
+        card.addEventListener("click", () => {
+          localStorage.setItem("selectedCompId", comp.id);
+          
+          if (estaEncerrada) {
+            // Se for finalizada, redireciona para os resultados da prova escolhida
+            window.location.href = `./resultados.html?compId=${comp.id}`;
+          } else {
+            // Se estiver em andamento, abre a tela do painel/transmissão
+            window.location.href = `./painel.html?compId=${comp.id}`;
+          }
+        });
+
+        containerProvas.appendChild(card);
+      });
+    }
+
+    abaEmAndamento.addEventListener("click", () => {
+      abaAtual = "ANDAMENTO";
+      abaEmAndamento.classList.add("ativa");
+      abaFinalizadas.classList.remove("ativa");
+      renderizarProvas();
+    });
+
+    abaFinalizadas.addEventListener("click", () => {
+      abaAtual = "FINALIZADAS";
+      abaFinalizadas.classList.add("ativa");
+      abaEmAndamento.classList.remove("ativa");
+      renderizarProvas();
+    });
+
+    linkToggle.addEventListener("click", () => {
+      modoCadastro = !modoCadastro;
+      msgErro.style.display = "none";
+      if (modoCadastro) {
+        tituloAuth.innerText = "CRIAR CONTA DE ORGANIZADOR";
+        groupTelefone.style.display = "block";
+        btnAuthSubmit.innerText = "Cadastrar e Entrar";
+        textoToggle.innerText = "Já possui uma conta?";
+        linkToggle.innerText = "Fazer Login";
+      } else {
+        tituloAuth.innerText = "ENTRAR NA CONTA";
+        groupTelefone.style.display = "none";
+        btnAuthSubmit.innerText = "Acessar Painel";
+        textoToggle.innerText = "Não possui conta?";
+        linkToggle.innerText = "Criar nova conta";
+      }
+    });
+
+    document.getElementById("formAuth").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msgErro.style.display = "none";
+      
+      const recaptchaResponse = grecaptcha.getResponse();
+      if (recaptchaResponse.length === 0) {
+        exibirErro("Por favor, marque a caixa 'Não sou um robô'.");
+        return;
+      }
+
+      const email = document.getElementById("authEmail").value.trim();
+      const senha = document.getElementById("authSenha").value;
+      const telefone = document.getElementById("authTelefone").value.trim();
+
+      try {
+        if (modoCadastro) {
+          if (!telefone) {
+            exibirErro("Por favor, preencha o número do celular.");
+            return;
+          }
+          
+          const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+          const user = userCredential.user;
+
+          await setDoc(doc(db, "users", user.uid), {
+            email: email,
+            telefone: telefone,
+            criadoEm: new Date()
+          });
+
+          alert("Conta de organizador criada com sucesso!");
+        } else {
+          await signInWithEmailAndPassword(auth, email, senha);
+        }
+        
+        window.location.href = "./config.html";
+      } catch (error) {
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+        tratarErroFirebase(error);
+      }
+    });
+
+    btnSairConta.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        alert("Você saiu da conta.");
+      } catch (error) {
+        alert("Erro ao sair: " + error.message);
+      }
+    });
+
+    function exibirErro(mensagem) {
+      msgErro.innerText = mensagem;
+      msgErro.style.display = "block";
+    }
+
+    function tratarErroFirebase(error) {
+      console.error(error);
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          exibirErro("Este e-mail já está cadastrado. Faça login ou use outro e-mail.");
+          break;
+        case 'auth/weak-password':
+          exibirErro("A senha deve ter pelo menos 6 caracteres.");
+          break;
+        case 'auth/invalid-email':
+          exibirErro("O e-mail digitado é inválido.");
+          break;
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          exibirErro("E-mail ou senha incorretos.");
+          break;
+        default:
+          exibirErro("Erro ao autenticar: " + error.message);
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      carregarProvasGerais();
+
+      if (user) {
+        tituloAuth.innerText = "MINHA CONTA";
+        lblEmailUsuario.innerText = user.email;
+        wrapperDeslogado.style.display = "none";
+        wrapperLogado.style.display = "block";
+
+        document.getElementById("btnAbrirLogin").innerText = "IR PARA GERENCIADOR (CONFIG)";
+        document.getElementById("btnAbrirLogin").onclick = () => window.location.href = "./config.html";
+      } else {
+        tituloAuth.innerText = modoCadastro ? "CRIAR CONTA DE ORGANIZADOR" : "ENTRAR NA CONTA";
+        wrapperDeslogado.style.display = "block";
+        wrapperLogado.style.display = "none";
+
+        document.getElementById("btnAbrirLogin").innerText = "CRIAR COMPETIÇÃO / PAINEL";
+        document.getElementById("btnAbrirLogin").onclick = () => {
+          document.getElementById("boxAuth").scrollIntoView({ behavior: 'smooth' });
+        };
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Super Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #222; color: #fff; }
+    .card { background: #333; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    input, button { padding: 10px; margin: 5px 0; }
+    button { background: #28a745; color: white; border: none; cursor: pointer; }
+    button:hover { background: #218838; }
+  </style>
+</head>
+<body>
+
+  <h1>Gerenciamento Global do Sistema</h1>
+  <div id="status">Verificando permissões...</div>
+
+  <div id="adminContent" style="display:none;">
+    <div class="card">
+      <h2>Configurar Limite Global de Senhas</h2>
+      <label for="limiteGlobal">Limite de Senhas Grátis/Padrão:</label><br>
+      <input type="number" id="limiteGlobal" placeholder="Ex: 100"><br><br>
+      <button id="btnSalvarLimite">Salvar Configuração</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_UID = "Cd4J21mv9RboRNLw7tcYVlcG1Pj2";
+
+    onAuthStateChanged(auth, async (user) => {
+      const status = document.getElementById("status");
+      if (user && user.uid === ADMIN_UID) {
+        status.textContent = `Bem-vindo, Super Admin (${user.email})`;
+        document.getElementById("adminContent").style.display = "block";
+        carregarConfiguracoes();
+      } else {
+        status.textContent = "Acesso Negado. Você não possui privilégios de Super Admin.";
+      }
+    });
+
+    async function carregarConfiguracoes() {
+      try {
+        const docRef = doc(db, "configuracoesGlobal", "sistema");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          document.getElementById("limiteGlobal").value = docSnap.data().limiteSenhasGlobal || 100;
+        }
+      } catch (err) {
+        console.error("Erro ao carregar configurações:", err);
+      }
+    }
+
+    document.getElementById("btnSalvarLimite").addEventListener("click", async () => {
+      const novoLimite = parseInt(document.getElementById("limiteGlobal").value, 10);
+      if (isNaN(novoLimite)) {
+        alert("Por favor, insira um número válido.");
+        return;
+      }
+
+      try {
+        await setDoc(doc(db, "configuracoesGlobal", "sistema"), {
+          limiteSenhasGlobal: novoLimite,
+          atualizadoEm: new Date()
+        }, { merge: true });
+        alert("Limite global atualizado com sucesso!");
+      } catch (err) {
+        alert("Erro ao salvar no banco de dados: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

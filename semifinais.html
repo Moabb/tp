@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Montagem de Semifinais - Team Penning</title>
+  <script type="module" src="./firebase-config.js"></script>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-gold: #ffb703;
+      --accent-green: #2a9d8f;
+      --accent-blue: #0077b6;
+      --danger-red: #e76f51;
+      --text-light: #f8f9fa;
+      --input-bg: #2b2b2b;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+    header h1 { color: var(--accent-gold); font-size: 1.6rem; text-transform: uppercase; }
+
+    .btn-header { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+    .btn-header:hover { opacity: 0.9; }
+
+    .grid-semifinal { display: grid; grid-template-columns: 1fr 380px; gap: 25px; align-items: start; }
+    @media (max-width: 950px) { .grid-semifinal { grid-template-columns: 1fr; } }
+
+    .card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    .card h2 { color: var(--accent-gold); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #ccc; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; background-color: var(--input-bg); border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.95rem; }
+
+    .bloco-classificada { background: #262626; border: 1px solid #444; border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+    .bloco-classificada h3 { color: var(--accent-green); font-size: 1.1rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 6px; }
+
+    .grid-baterias { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+
+    .tabela-classificados { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .tabela-classificados th, .tabela-classificados td { padding: 8px; font-size: 0.85rem; text-align: left; border-bottom: 1px solid #333; }
+    .tabela-classificados th { color: var(--accent-gold); background: #1f1f1f; }
+
+    .checkbox-bateria { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-gold); }
+
+    .btn-gerar { width: 100%; padding: 14px; background: var(--accent-green); color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+    .btn-gerar:hover { opacity: 0.9; }
+    .btn-gerar:disabled { background: #555; cursor: not-allowed; }
+
+    .fixar { position: sticky; top: 20px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔥 MONTAGEM DE SEMIFINAIS</h1>
+    <div>
+      <a href="./config.html" class="btn-header">⚙️ CONFIG</a>
+      <a href="./final.html" class="btn-header">🏆 FINAL</a>
+      <a href="./admin.html" class="btn-header">⏱️ PROVA (ADMIN)</a>
+      <button class="btn-header" id="btnSair" style="background:#e76f51; color:#fff;">SAIR</button>
+    </div>
+  </header>
+
+  <div class="grid-semifinal">
+
+    <!-- COLUNA 1: Classificados na Etapa Classificatória -->
+    <main>
+      <article class="card">
+        <h2>1. Selecionar Classificados das Etapas</h2>
+        <p style="font-size: 0.85rem; color: #aaa; margin-bottom: 15px;">
+          Selecione abaixo as baterias da fase classificatória que participarão desta Semifinal.
+        </p>
+
+        <div class="form-group">
+          <label for="selectCompeticao">Filtrar por Competição:</label>
+          <select id="selectCompeticao">
+            <option value="">Carregando competições...</option>
+          </select>
+        </div>
+
+        <div id="containerClassificadas">
+          <p style="color: #888;">Selecione uma competição acima...</p>
+        </div>
+      </article>
+    </main>
+
+    <!-- COLUNA 2: Configuração da Semifinal -->
+    <aside class="fixar">
+      <article class="card">
+        <h2>2. Configurar Semifinal</h2>
+        <form id="formGerarSemi">
+          
+          <div class="form-group">
+            <label for="inputNomeSemi">Nome da Categoria Semifinal:</label>
+            <input type="text" id="inputNomeSemi" placeholder="Ex: Semifinal - SOMA 3" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputNumBaterias">Número de Baterias / Lotes:</label>
+            <input type="number" id="inputNumBaterias" min="1" value="1" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputCorridasPorBateria">Corridas por Lote/Bateria:</label>
+            <input type="number" id="inputCorridasPorBateria" min="1" value="1" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputClassificadosPorBateria">Classificados por Bateria p/ Final:</label>
+            <input type="number" id="inputClassificadosPorBateria" min="1" value="5" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inputDataSemi">Data da Prova:</label>
+            <input type="date" id="inputDataSemi" required>
+          </div>
+
+          <div style="background: #2b2b2b; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid var(--accent-gold);">
+            <span style="font-size: 0.8rem; color: #ccc;">Trios Selecionados:</span>
+            <h3 id="txtTotalSelecionados" style="color: var(--accent-gold); font-size: 1.3rem;">0 Trios</h3>
+          </div>
+
+          <button type="submit" class="btn-gerar" id="btnGerar" disabled>🔥 Gerar Semifinal e Enviar para Admin</button>
+        </form>
+      </article>
+    </aside>
+
+  </div>
+
+  <script type="module">
+    import { 
+      auth, 
+      db, 
+      collection, 
+      addDoc, 
+      getDoc,
+      getDocs, 
+      query, 
+      where, 
+      doc,
+      setDoc,
+      updateDoc,
+      onAuthStateChanged,
+      signOut 
+    } from "./firebase-config.js";
+
+    let currentUser = null;
+    let competicoesCache = {};
+    let classificadosUnicos = [];
+    let triosUnificadosSelecionados = [];
+
+    const selectCompeticao = document.getElementById("selectCompeticao");
+    const containerClassificadas = document.getElementById("containerClassificadas");
+    const txtTotalSelecionados = document.getElementById("txtTotalSelecionados");
+    const btnGerar = document.getElementById("btnGerar");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "./index.html";
+        return;
+      }
+      currentUser = user;
+      document.getElementById("inputDataSemi").value = new Date().toISOString().split('T')[0];
+      carregarCompeticoes();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const statusProva = localStorage.getItem('statusProva');
+
+      if (statusProva === 'finalizada') {
+        const containerLista = document.getElementById('seu-container-da-lista');
+        if (containerLista) {
+          containerLista.innerHTML = '<p>As provas já foram encerradas!</p>';
+        }
+        return;
+      }
+    });
+
+    async function carregarCompeticoes() {
+      try {
+        const q = query(
+          collection(db, "competicoes"), 
+          where("organizadorId", "==", currentUser.uid)
+        );
+        const snapshot = await getDocs(q);
+
+        selectCompeticao.innerHTML = '<option value="">-- Selecione uma Competição --</option>';
+
+        if (snapshot.empty) {
+          selectCompeticao.innerHTML = '<option value="">Nenhuma competição encontrada</option>';
+          return;
+        }
+
+        snapshot.forEach(docSnap => {
+          const comp = docSnap.data();
+          competicoesCache[docSnap.id] = comp;
+
+          const option = document.createElement("option");
+          option.value = docSnap.id;
+          option.textContent = `${comp.nome} (${comp.dataInicio})`;
+          selectCompeticao.appendChild(option);
+        });
+
+        const compSalva = localStorage.getItem("selectedCompId");
+        if (compSalva && competicoesCache[compSalva]) {
+          selectCompeticao.value = compSalva;
+          carregarClassificados(compSalva);
+        }
+
+      } catch (err) {
+        console.error("Erro ao carregar competições:", err);
+      }
+    }
+
+    selectCompeticao.addEventListener("change", (e) => {
+      const compId = e.target.value;
+      if (compId) {
+        localStorage.setItem("selectedCompId", compId);
+        carregarClassificados(compId);
+      } else {
+        containerClassificadas.innerHTML = '<p style="color: #888;">Selecione uma competição acima...</p>';
+      }
+    });
+
+    async function carregarClassificados(compId) {
+      containerClassificadas.innerHTML = '<p style="color: #888;">Buscando classificados...</p>';
+      
+      try {
+        const q = query(
+          collection(db, "classificados"),
+          where("competicaoId", "==", compId),
+          where("faseOrigem", "==", "CLASSIFICACAO"),
+          where("status", "==", "PENDENTE")
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          containerClassificadas.innerHTML = '<p style="color: #e76f51;">Nenhuma etapa classificatória pendente no momento.</p>';
+          return;
+        }
+
+        const mapaUnicos = {};
+
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const chaveUnica = `${data.categoria}_${data.dataCategoria || 'semdata'}`;
+
+          if (!mapaUnicos[chaveUnica]) {
+            mapaUnicos[chaveUnica] = { id: docSnap.id, ...data };
+          } else {
+            const dataExistente = mapaUnicos[chaveUnica].criadoEm?.seconds || 0;
+            const dataNova = data.criadoEm?.seconds || 0;
+            if (dataNova > dataExistente) {
+              mapaUnicos[chaveUnica] = { id: docSnap.id, ...data };
+            }
+          }
+        });
+
+        classificadosUnicos = Object.values(mapaUnicos).sort((a, b) => {
+          return (a.dataCategoria || "").localeCompare(b.dataCategoria || "");
+        });
+
+        renderizarBlocosClassificados();
+
+      } catch (err) {
+        console.error("Erro ao carregar classificados:", err);
+        containerClassificadas.innerHTML = '<p style="color: #e76f51;">Erro ao carregar classificados.</p>';
+      }
+    }
+
+    function renderizarBlocosClassificados() {
+      containerClassificadas.innerHTML = "";
+      triosUnificadosSelecionados = [];
+      atualizarContador();
+
+      classificadosUnicos.forEach(item => {
+        const divBox = document.createElement("div");
+        divBox.className = "bloco-classificada";
+
+        let htmlBaterias = "";
+        const resPorBat = item.resultadosPorBateria || {};
+        const bateriasOrdenadas = Object.keys(resPorBat).sort();
+
+        bateriasOrdenadas.forEach(batKey => {
+          const numeroBateria = batKey.replace("bateria", "");
+          const triosClassificados = resPorBat[batKey] || [];
+
+          let linhasTabela = "";
+          triosClassificados.forEach(trio => {
+            linhasTabela += `
+              <tr>
+                <td><strong>#${trio.posicao}</strong></td>
+                <td>${trio.integrantes ? trio.integrantes.join(" / ") : "N/D"}</td>
+                <td>${parseFloat(trio.tempo).toFixed(2)}s</td>
+              </tr>
+            `;
+          });
+
+          htmlBaterias += `
+            <div style="background: #1e1e1e; padding: 10px; border-radius: 6px; border: 1px solid #333;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                <label style="font-weight:bold; color:var(--accent-gold); cursor:pointer; display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" class="checkbox-bateria" data-doc-id="${item.id}" data-bat-key="${batKey}">
+                  Incluir na Semifinal - Bat. ${numeroBateria} (${triosClassificados.length} Trios)
+                </label>
+              </div>
+              <table class="tabela-classificados">
+                <thead>
+                  <tr><th>Pos</th><th>Integrantes</th><th>Tempo</th></tr>
+                </thead>
+                <tbody>${linhasTabela || '<tr><td colspan="3" style="color:#888;">Nenhum trio</td></tr>'}</tbody>
+              </table>
+            </div>
+          `;
+        });
+
+        divBox.innerHTML = `
+          <h3>
+            <span>${item.categoria}</span>
+            <small style="font-size:0.85rem; color:var(--accent-gold);">Data: ${item.dataCategoria || '--'}</small>
+          </h3>
+          <div class="grid-baterias">
+            ${htmlBaterias}
+          </div>
+        `;
+
+        containerClassificadas.appendChild(divBox);
+      });
+
+      document.querySelectorAll(".checkbox-bateria").forEach(chk => {
+        chk.addEventListener("change", recalcularTriosSelecionados);
+      });
+    }
+
+    function recalcularTriosSelecionados() {
+      triosUnificadosSelecionados = [];
+
+      document.querySelectorAll(".checkbox-bateria:checked").forEach(chk => {
+        const docId = chk.getAttribute("data-doc-id");
+        const batKey = chk.getAttribute("data-bat-key");
+
+        const classificadoDoc = classificadosUnicos.find(c => c.id === docId);
+        if (classificadoDoc && classificadoDoc.resultadosPorBateria[batKey]) {
+          const trios = classificadoDoc.resultadosPorBateria[batKey];
+          triosUnificadosSelecionados.push(...trios);
+        }
+      });
+
+      atualizarContador();
+    }
+
+    function atualizarContador() {
+      const total = triosUnificadosSelecionados.length;
+      txtTotalSelecionados.innerText = `${total} Trio${total !== 1 ? 's' : ''}`;
+      btnGerar.disabled = total === 0;
+
+      const inputNome = document.getElementById("inputNomeSemi");
+      if (!inputNome.value && classificadosUnicos.length > 0) {
+        inputNome.value = `Semifinal - ${classificadosUnicos[0].categoria}`;
+      }
+    }
+
+    document.getElementById("formGerarSemi").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (triosUnificadosSelecionados.length === 0) {
+        alert("Selecione ao menos uma bateria para gerar a Semifinal!");
+        return;
+      }
+
+      const compId = selectCompeticao.value;
+      const nomeSemi = document.getElementById("inputNomeSemi").value.trim();
+      const dataSemi = document.getElementById("inputDataSemi").value;
+
+      const numBaterias = parseInt(document.getElementById("inputNumBaterias").value) || 1;
+      const corridasPorBateria = parseInt(document.getElementById("inputCorridasPorBateria").value) || 1;
+      const classificadosPorBateria = parseInt(document.getElementById("inputClassificadosPorBateria").value) || 5;
+
+      if (!confirm(`Confirmar a criação da "${nomeSemi}" com ${triosUnificadosSelecionados.length} trios semifinalistas?`)) return;
+
+      try {
+        btnGerar.disabled = true;
+        btnGerar.innerText = "Criando Semifinal...";
+
+        // OPÇÃO A: Atualiza a regra diretamente no Array 'categorias' dentro de 'competicoes'
+        const compRef = doc(db, "competicoes", compId);
+        const compSnap = await getDoc(compRef);
+        
+        let categoriasAtuais = [];
+        if (compSnap.exists() && compSnap.data().categorias) {
+          categoriasAtuais = compSnap.data().categorias;
+        }
+
+        const novaCategoriaSemi = {
+          nome: nomeSemi,
+          data: dataSemi,
+          qtdBaterias: numBaterias,
+          limiteGado: corridasPorBateria,
+          classificadosPorBateria: classificadosPorBateria,
+          fase: "SEMIFINAL"
+        };
+
+        const idxExistente = categoriasAtuais.findIndex(c => c.nome === nomeSemi);
+        if (idxExistente >= 0) {
+          categoriasAtuais[idxExistente] = novaCategoriaSemi;
+        } else {
+          categoriasAtuais.push(novaCategoriaSemi);
+        }
+
+        await updateDoc(compRef, {
+          categorias: categoriasAtuais,
+          atualizadoEm: new Date()
+        });
+
+        // 1. Grava os trios semifinalistas
+        for (let i = 0; i < triosUnificadosSelecionados.length; i++) {
+          const t = triosUnificadosSelecionados[i];
+          await addDoc(collection(db, "trios"), {
+            competicaoId: compId,
+            categoria: nomeSemi,
+            data: dataSemi,
+            categoriaData: dataSemi,
+            fase: "SEMIFINAL",
+            senha: i + 1,
+            integrantes: t.integrantes,
+            status: "INSCRITO",
+            criadoEm: new Date()
+          });
+        }
+
+        // 2. Marca os documentos selecionados como PROCESSADO
+        const docIdsProcessados = new Set();
+        document.querySelectorAll(".checkbox-bateria:checked").forEach(chk => {
+          const docId = chk.getAttribute("data-doc-id");
+          if (docId) docIdsProcessados.add(docId);
+        });
+
+        for (const docId of docIdsProcessados) {
+          const docRef = doc(db, "classificados", docId);
+          await updateDoc(docRef, { status: "PROCESSADO" });
+        }
+
+        alert("Semifinal criada com sucesso! Redirecionando para o painel do juiz...");
+        window.location.href = "./admin.html";
+
+      } catch (err) {
+        console.error("Erro ao gerar semifinal:", err);
+        alert("Erro ao criar a Semifinal: " + err.message);
+        btnGerar.disabled = false;
+        btnGerar.innerText = "🔥 Gerar Semifinal e Enviar para Admin";
+      }
+    });
+
+    document.getElementById("btnSair").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "./index.html");
+    });
+  </script>
+</body>
+</html>

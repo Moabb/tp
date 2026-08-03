@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel do Juiz / Mesa de Som</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+    h1, h2 { color: #333; }
+    .section { background: #fff; padding: 15px; margin-bottom: 20px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+    button { padding: 8px 12px; margin-right: 5px; cursor: pointer; }
+    input, select { padding: 6px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Painel de Controle do Evento</h1>
+  <div id="userInfo">Verificando autenticação...</div>
+
+  <div class="section">
+    <h2>Seleção de Competição</h2>
+    <select id="selectCompeticao">
+      <option value="">Carregando competições...</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <h2>Gerenciamento do Placar / Prova</h2>
+    <table id="tabelaTrios">
+      <thead>
+        <tr>
+          <th>Nº</th>
+          <th>Integrantes / Categoria</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3">Selecione uma competição.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Função de sanitização contra XSS
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      const userInfo = document.getElementById("userInfo");
+      if (user) {
+        userInfo.textContent = `Logado como: ${user.email}`;
+        carregarCompeticoes(user.uid);
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    function carregarCompeticoes(userId) {
+      const select = document.getElementById("selectCompeticao");
+      const q = query(collection(db, "competicoes"), where("organizadorId", "==", userId));
+      
+      onSnapshot(q, (snapshot) => {
+        select.innerHTML = '<option value="">Selecione uma competição...</option>';
+        snapshot.forEach((doc) => {
+          const comp = doc.data();
+          const option = document.createElement("option");
+          option.value = doc.id;
+          option.textContent = escapeHTML(comp.nome || doc.id);
+          select.appendChild(option);
+        });
+      });
+    }
+
+    document.getElementById("selectCompeticao").addEventListener("change", (e) => {
+      const compId = e.target.value;
+      if (compId) carregarTrios(compId);
+    });
+
+    function carregarTrios(compId) {
+      const tbody = document.querySelector("#tabelaTrios tbody");
+      const q = query(collection(db, "trios"), where("competicaoId", "==", compId));
+
+      onSnapshot(q, (snapshot) => {
+        tbody.innerHTML = "";
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="3">Nenhum trio cadastrado.</td></tr>';
+          return;
+        }
+
+        snapshot.forEach((docSnap) => {
+          const trio = docSnap.data();
+          const tr = document.createElement("tr");
+
+          const nomesSanitizados = trio.integrantes 
+            ? trio.integrantes.map(i => escapeHTML(i)).join(" / ") 
+            : "Sem integrantes";
+
+          tr.innerHTML = `
+            <td>${escapeHTML(trio.senha || '-')}</td>
+            <td>${nomesSanitizados}</td>
+            <td>
+              <button onclick="chamarTrio('${docSnap.id}')">Chamar na Tela</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    window.chamarTrio = async (trioId) => {
+      try {
+        await updateDoc(doc(db, "transmissao", "atual"), { trioId: trioId, timestamp: Date.now() });
+        alert("Trio enviado para a tela!");
+      } catch (err) {
+        console.error("Erro ao chamar trio:", err);
+      }
+    };
+  </script>
+</body>
+</html>

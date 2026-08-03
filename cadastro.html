@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Trios / Inscrição</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h2>Ficha de Inscrição</h2>
+
+  <form id="formCadastro">
+    <div class="form-group">
+      <label>Nome do Integrante 1:</label>
+      <input type="text" id="int1" required>
+    </div>
+    <div class="form-group">
+      <label>Nome do Integrante 2:</label>
+      <input type="text" id="int2" required>
+    </div>
+    <div class="form-group">
+      <label>Nome do Integrante 3:</label>
+      <input type="text" id="int3" required>
+    </div>
+    <button type="submit">Cadastrar Trio</button>
+  </form>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    document.getElementById("formCadastro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!currentUser) return;
+
+      const int1 = document.getElementById("int1").value.trim();
+      const int2 = document.getElementById("int2").value.trim();
+      const int3 = document.getElementById("int3").value.trim();
+
+      try {
+        // 1. Busca limite global
+        const configSnap = await getDoc(doc(db, "configuracoesGlobal", "sistema"));
+        let limiteGlobal = 100;
+        if (configSnap.exists()) {
+          limiteGlobal = configSnap.data().limiteSenhasGlobal || 100;
+        }
+
+        // 2. Contabiliza total de trios do organizador
+        const qTrios = query(collection(db, "trios"), where("organizadorId", "==", currentUser.uid));
+        const triosSnap = await getDocs(qTrios);
+
+        if (triosSnap.size >= limiteGlobal) {
+          alert(`⚠️ LIMITE ATINGIDO! Você atingiu o limite máximo de ${limiteGlobal} senhas cadastradas.`);
+          return;
+        }
+
+        // 3. Cadastra o Trio
+        await addDoc(collection(db, "trios"), {
+          integrantes: [int1, int2, int3],
+          organizadorId: currentUser.uid,
+          criadoEm: new Date()
+        });
+
+        alert("Trio cadastrado com sucesso!");
+        document.getElementById("formCadastro").reset();
+
+      } catch (err) {
+        console.error("Erro ao cadastrar trio:", err);
+        alert("Erro ao realizar o cadastro: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
