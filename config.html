@@ -465,19 +465,73 @@
           const card = document.createElement("div");
           card.className = "card-prova-item";
           
-          const categoriasNomes = comp.categorias ? comp.categorias.map(c => c.nome).join(", ") : "Sem categorias";
+          const detalhesCat = comp.categorias && comp.categorias.length > 0
+            ? comp.categorias.map(c => `${c.nome}${c.isFeminino ? ' (♀️ Fem)' : ''} (${c.qtdBaterias || 2} Bat / ${c.limiteGado || 25} Lote / ${c.classificadosPorBateria || 3} Class)`).join(" | ")
+            : "Nenhuma categoria";
+
+          let optionsCategorias = `<option value="">Selecione...</option>`;
+          if (comp.categorias && comp.categorias.length > 0) {
+            comp.categorias.forEach((cat) => {
+              optionsCategorias += `<option value="${cat.nome}">${cat.nome}${cat.isFeminino ? ' (♀️ Fem)' : ''}</option>`;
+            });
+          }
+
+          const infoVinculo = comp.vinculoEmbutido 
+            ? `<p style="font-size:0.8rem; color:#2a9d8f; margin-top:5px;"><strong>Vínculo Ativo:</strong> ${comp.vinculoEmbutido.catPai} ➔ ${comp.vinculoEmbutido.catEspelho}</p>`
+            : '';
 
           card.innerHTML = `
             <div class="top-info">
               <div class="info">
                 <h3>${comp.nome}</h3>
-                <p>Data: ${comp.dataInicio} | Categorias: ${categoriasNomes}</p>
+                <p>Início: ${comp.dataInicio} | Categorias: ${detalhesCat}</p>
+              </div>
+              <div class="acoes">
+                <button class="btn-action btnEditar" data-id="${compId}">✏️ Editar / Regulamento</button>
+                <button class="btn-action btnInscritos" data-id="${compId}">📝 Iniciar Cadastrar Trios</button>
               </div>
             </div>
-            <div class="acoes">
-              <button class="btn-action btn-editar-comp" data-id="${compId}">✏️ Editar Configurações</button>
+
+            <hr style="border-color: #333; margin: 0;">
+
+            <div class="box-categoria-embutida">
+              <h4>🔗 Vincular Categoria Embutida (Espelho)</h4>
+              <div class="form-embutida-inline">
+                <select id="selectCatPai_${compId}">
+                  <option value="">Categoria Principal (Pista)</option>
+                  ${optionsCategorias}
+                </select>
+
+                <span style="color: #888;">➔</span>
+
+                <select id="selectCatEspelho_${compId}">
+                  <option value="">Categoria Embutida (Recebe Tempos)</option>
+                  ${optionsCategorias}
+                </select>
+
+                <button class="btn-vincular-emb btnVincular" data-id="${compId}">
+                  Vincular
+                </button>
+              </div>
+              ${infoVinculo}
             </div>
           `;
+
+          card.querySelector(".btnEditar").addEventListener("click", () => {
+            localStorage.setItem("selectedCompId", compId);
+            carregarParaEdicao(compId);
+          });
+          card.querySelector(".btnInscritos").addEventListener("click", () => irParaCadastro(compId));
+          card.querySelector(".btnVincular").addEventListener("click", () => vincularCategoriaEmbutida(compId));
+
+          if (comp.vinculoEmbutido) {
+            setTimeout(() => {
+              const selPai = document.getElementById(`selectCatPai_${compId}`);
+              const selEsp = document.getElementById(`selectCatEspelho_${compId}`);
+              if (selPai) selPai.value = comp.vinculoEmbutido.catPai || "";
+              if (selEsp) selEsp.value = comp.vinculoEmbutido.catEspelho || "";
+            }, 50);
+          }
 
           listaProvas.appendChild(card);
         }
@@ -487,32 +541,168 @@
         }
 
         if (qtdFinalizadas === 0) {
-          listaHistorico.innerHTML = "<p style='color:#666; font-size:0.85rem;'>Nenhum histórico disponível.</p>";
+          listaHistorico.innerHTML = "<p style='color:#666; font-size:0.85rem;'>Nenhuma competição finalizada ainda.</p>";
         }
 
-        document.querySelectorAll(".btn-editar-comp").forEach(btn => {
-          btn.addEventListener("click", (e) => {
-            const compId = e.target.getAttribute("data-id");
-            carregarParaEdicao(compId);
-          });
-        });
-
       } catch (error) {
-        console.error("Erro ao carregar competições:", error);
+        console.error("Erro ao carregar:", error);
+        listaProvas.innerHTML = "<p style='color:#e76f51;'>Erro ao carregar competições.</p>";
       }
     }
 
+    async function vincularCategoriaEmbutida(compId) {
+      const selectPai = document.getElementById(`selectCatPai_${compId}`);
+      const selectEspelho = document.getElementById(`selectCatEspelho_${compId}`);
+
+      const catPai = selectPai ? selectPai.value : "";
+      const catEspelho = selectEspelho ? selectEspelho.value : "";
+
+      if (!catPai || !catEspelho) {
+        alert("Por favor, selecione tanto a Categoria Principal quanto a Categoria Embutida.");
+        return;
+      }
+
+      if (catPai === catEspelho) {
+        alert("A Categoria Principal e a Categoria Embutida não podem ser a mesma!");
+        return;
+      }
+
+      try {
+        const compRef = doc(db, "competicoes", compId);
+        await updateDoc(compRef, {
+          vinculoEmbutido: {
+            catPai: catPai,
+            catEspelho: catEspelho,
+            vinculadoEm: new Date()
+          },
+          atualizadoEm: new Date()
+        });
+
+        alert(`Vínculo realizado com sucesso!\n\nCategoria Principal (Pista): ${catPai}\nCategoria Embutida (Espelho): ${catEspelho}`);
+        carregarCompeticoes();
+      } catch (error) {
+        console.error("Erro ao vincular categorias:", error);
+        alert("Erro ao salvar o vínculo no banco de dados: " + error.message);
+      }
+    }
+
+    btnAbrirModalExcluir.addEventListener("click", () => {
+      const ids = Object.keys(competicoesCache);
+      if (ids.length === 0) {
+        alert("Não há competições cadastradas para excluir.");
+        return;
+      }
+
+      listaExcluirCheckboxes.innerHTML = "";
+      checkMarcarTodos.checked = false;
+
+      ids.forEach(compId => {
+        const comp = competicoesCache[compId];
+        const item = document.createElement("label");
+        item.className = "item-excluir-check";
+        item.innerHTML = `
+          <input type="checkbox" class="chk-comp-item" value="${compId}">
+          <div>
+            <strong style="color:#fff; display:block;">${comp.nome} ${comp.status === "FINALIZADA" ? "(FINALIZADA)" : ""}</strong>
+            <span style="font-size:0.75rem; color:#aaa;">Início: ${comp.dataInicio}</span>
+          </div>
+        `;
+        listaExcluirCheckboxes.appendChild(item);
+      });
+
+      modalExcluir.classList.add("active");
+    });
+
+    btnFinalizarCompeticao.addEventListener("click", async () => {
+      const selectedCompId = localStorage.getItem("selectedCompId") || modoEdicaoId;
+
+      if (!selectedCompId || !competicoesCache[selectedCompId] || competicoesCache[selectedCompId].status === "FINALIZADA") {
+        alert("Nenhuma competição ativa selecionada para finalizar.");
+        return;
+      }
+
+      const confirma = confirm("Deseja realmente FINALIZAR esta competição?\n\nEla será movida para o Histórico de Competições Finalizadas.");
+      if (!confirma) return;
+
+      try {
+        const compRef = doc(db, "competicoes", selectedCompId);
+        await updateDoc(compRef, {
+          status: "FINALIZADA",
+          atualizadoEm: new Date()
+        });
+
+        alert("Competição finalizada com sucesso!");
+        resetarFormulario();
+        await carregarCompeticoes();
+      } catch (error) {
+        console.error("Erro ao finalizar competição:", error);
+        alert("Erro ao finalizar competição: " + error.message);
+      }
+    });
+
+    function fecharModalExclusao() {
+      modalExcluir.classList.remove("active");
+    }
+
+    btnFecharModal.addEventListener("click", fecharModalExclusao);
+    btnCancelarModal.addEventListener("click", fecharModalExclusao);
+
+    checkMarcarTodos.addEventListener("change", (e) => {
+      const checkboxes = listaExcluirCheckboxes.querySelectorAll(".chk-comp-item");
+      checkboxes.forEach(chk => chk.checked = e.target.checked);
+    });
+
+    btnConfirmarExclusao.addEventListener("click", async () => {
+      const selecionados = Array.from(listaExcluirCheckboxes.querySelectorAll(".chk-comp-item:checked"))
+                                .map(chk => chk.value);
+
+      if (selecionados.length === 0) {
+        alert("Selecione ao menos uma competição para excluir.");
+        return;
+      }
+
+      const confirma = confirm(`TEM CERTEZA?\n\nVocê está prestes a apagar ${selecionados.length} competição(ões) do banco de dados de forma IRREVERSÍVEL.`);
+      if (!confirma) return;
+
+      try {
+        btnConfirmarExclusao.disabled = true;
+        btnConfirmarExclusao.innerText = "Apagando do banco...";
+
+        for (const compId of selecionados) {
+          await deleteDoc(doc(db, "competicoes", compId));
+        }
+
+        alert("Competição(ões) excluída(s) com sucesso!");
+        fecharModalExclusao();
+        
+        if (selecionados.includes(modoEdicaoId)) {
+          resetarFormulario();
+        }
+        
+        carregarCompeticoes();
+      } catch (error) {
+        console.error("Erro ao excluir competição:", error);
+        alert("Erro ao excluir do banco de dados: " + error.message);
+      } finally {
+        btnConfirmarExclusao.disabled = false;
+        btnConfirmarExclusao.innerText = "Confirmar e Apagar Tudo";
+      }
+    });
+
     function carregarParaEdicao(compId) {
       const comp = competicoesCache[compId];
-      if (!comp) return;
+      if (!comp || comp.status === "FINALIZADA") return;
 
       modoEdicaoId = compId;
-      localStorage.setItem("selectedCompId", compId);
+      tituloForm.innerText = "EDITAR COMPETIÇÃO / REGULAMENTO";
+      btnSalvarComp.innerText = "Atualizar Competição";
+      btnNovaComp.style.display = "inline-block";
 
       document.getElementById("nomeComp").value = comp.nome || "";
       document.getElementById("dataComp").value = comp.dataInicio || "";
 
       containerCategorias.innerHTML = "";
+
       if (comp.categorias && comp.categorias.length > 0) {
         comp.categorias.forEach(cat => {
           adicionarCampoCategoria(
@@ -520,7 +710,7 @@
             cat.data || comp.dataInicio,
             cat.qtdBaterias || 2,
             cat.limiteGado || 25,
-            cat.classificadosPorBateria || 3,
+            cat.classificadosPorBateria || cat.classificadosLote || 3,
             cat.isFeminino || false
           );
         });
@@ -528,107 +718,26 @@
         adicionarCampoCategoria();
       }
 
-      tituloForm.innerText = "EDITAR COMPETIÇÃO";
-      btnSalvarComp.innerText = "Atualizar Competição";
-      btnNovaComp.style.display = "block";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Modal de Exclusão
-    btnAbrirModalExcluir.addEventListener("click", () => {
-      listaExcluirCheckboxes.innerHTML = "";
-      const ids = Object.keys(competicoesCache);
+    function irParaCadastro(compId) {
+      localStorage.setItem("selectedCompId", compId);
+      window.location.href = "./cadastro.html";
+    }
 
-      if (ids.length === 0) {
-        alert("Não há competições registradas para excluir.");
-        return;
-      }
-
-      ids.forEach(id => {
-        const comp = competicoesCache[id];
-        const label = document.createElement("label");
-        label.className = "item-excluir-check";
-        label.innerHTML = `
-          <input type="checkbox" value="${id}" class="chk-excluir-item">
-          <div>
-            <strong>${comp.nome}</strong><br>
-            <small style="color:#aaa;">Data: ${comp.dataInicio} | Status: ${comp.status || 'ATIVA'}</small>
-          </div>
-        `;
-        listaExcluirCheckboxes.appendChild(label);
-      });
-
-      modalExcluir.classList.add("active");
+    document.getElementById("btnIrAdmin").addEventListener("click", () => {
+      window.location.href = "./admin.html";
     });
-
-    btnFecharModal.addEventListener("click", () => modalExcluir.classList.remove("active"));
-    btnCancelarModal.addEventListener("click", () => modalExcluir.classList.remove("active"));
-
-    checkMarcarTodos.addEventListener("change", (e) => {
-      const marcado = e.target.checked;
-      document.querySelectorAll(".chk-excluir-item").forEach(chk => chk.checked = marcado);
+    document.getElementById("btnIrAdminNav").addEventListener("click", () => {
+      window.location.href = "./admin.html";
     });
-
-    btnConfirmarExclusao.addEventListener("click", async () => {
-      const marcados = Array.from(document.querySelectorAll(".chk-excluir-item:checked")).map(c => c.value);
-
-      if (marcados.length === 0) {
-        alert("Selecione pelo menos uma competição para excluir.");
-        return;
-      }
-
-      if (!confirm(`TEM CERTEZA? Você irá apagar definitivamente ${marcados.length} competição(ões) do banco de dados.`)) return;
-
-      try {
-        btnConfirmarExclusao.disabled = true;
-        btnConfirmarExclusao.innerText = "Apagando...";
-
-        for (const compId of marcados) {
-          await deleteDoc(doc(db, "competicoes", compId));
-        }
-
-        alert("Competição(ões) excluída(s) com sucesso!");
-        modalExcluir.classList.remove("active");
-        resetarFormulario();
-        await carregarCompeticoes();
-
-      } catch (err) {
-        alert("Erro ao excluir: " + err.message);
-      } finally {
-        btnConfirmarExclusao.disabled = false;
-        btnConfirmarExclusao.innerText = "Confirmar e Apagar Tudo";
-      }
-    });
-
-    btnFinalizarCompeticao.addEventListener("click", async () => {
-      const compId = modoEdicaoId || localStorage.getItem("selectedCompId");
-      if (!compId || !competicoesCache[compId]) {
-        alert("Selecione ou edite uma competição ativa primeiro para finalizar.");
-        return;
-      }
-
-      if (!confirm(`Deseja encerrar e finalizar a competição "${competicoesCache[compId].nome}"? Ela será movida para o Histórico.`)) return;
-
-      try {
-        await updateDoc(doc(db, "competicoes", compId), {
-          status: "FINALIZADA",
-          finalizadaEm: new Date()
-        });
-
-        alert("Competição finalizada e movida para o Histórico com sucesso!");
-        resetarFormulario();
-        await carregarCompeticoes();
-
-      } catch (err) {
-        alert("Erro ao finalizar competição: " + err.message);
-      }
-    });
-
-    document.getElementById("btnIrAdmin").addEventListener("click", () => window.location.href = "./admin.html");
-    document.getElementById("btnIrAdminNav").addEventListener("click", () => window.location.href = "./admin.html");
 
     document.getElementById("btnSair").addEventListener("click", () => {
       signOut(auth).then(() => window.location.href = "./index.html");
     });
+
+    adicionarCampoCategoria();
   </script>
 </body>
 </html>
