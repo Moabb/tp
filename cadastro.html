@@ -1,97 +1,474 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cadastro de Trios / Inscrição</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscrição de Trios - Team Penning</title>
+  <script type="module" src="./firebase-config.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-gold: #ffb703;
+      --accent-green: #2a9d8f;
+      --text-light: #f8f9fa;
+      --input-bg: #2b2b2b;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px; }
+    header h1 { color: var(--accent-gold); font-size: 1.6rem; text-transform: uppercase; }
+
+    .btn-action { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .btn-action:hover { opacity: 0.9; }
+    .btn-danger { background: #e76f51; color: #fff; }
+
+    .grid-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 25px; align-items: start; }
+    @media (max-width: 900px) { 
+      .grid-layout { grid-template-columns: 1fr; } 
+      .fixar { position: static; }
+    }
+
+    .secao-card { background: var(--card-bg); border-radius: 8px; padding: 25px; border: 1px solid var(--border-color); }
+    .secao-card h2 { color: var(--accent-gold); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+
     .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input { width: 100%; padding: 8px; box-sizing: border-box; }
-    button { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
+    .form-group label { display: block; font-size: 0.85rem; color: #ccc; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid #444; border-radius: 4px; color: #fff; }
+
+    .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .btn-salvar { width: 100%; padding: 12px; background: var(--accent-green); color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+    .btn-salvar:disabled { background: #555; cursor: not-allowed; }
+
+    .tabela-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+    th { color: var(--accent-gold); background: #262626; }
+    tr:hover { background: #262626; }
+    
+    .badge-senha { background: var(--accent-gold); color: #000; font-weight: bold; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+    
+    .fixar { position: sticky; top: 20px; align-self: start; z-index: 10; }
   </style>
 </head>
 <body>
 
-  <h2>Ficha de Inscrição</h2>
+  <header>
+    <h1>📝 CADASTRO DE TRIOS / INSCRITOS</h1>
+    <div>
+      <button class="btn-action" onclick="window.location.href='./config.html'">⚙️ CONFIG</button>
+      <button class="btn-action" id="btnIrAdmin">⏱️ IR PARA PROVA (ADMIN)</button>
+      <button class="btn-action btn-danger" id="btnSair">SAIR</button>
+    </div>
+  </header>
 
-  <form id="formCadastro">
-    <div class="form-group">
-      <label>Nome do Integrante 1:</label>
-      <input type="text" id="int1" required>
-    </div>
-    <div class="form-group">
-      <label>Nome do Integrante 2:</label>
-      <input type="text" id="int2" required>
-    </div>
-    <div class="form-group">
-      <label>Nome do Integrante 3:</label>
-      <input type="text" id="int3" required>
-    </div>
-    <button type="submit">Cadastrar Trio</button>
-  </form>
+  <main class="grid-layout">
+    
+    <!-- Formulário de Inscrição -->
+    <section class="secao-card fixar">
+      <h2>INSCREVER NOVO TRIO</h2>
+      <form id="formTrio">
+        
+        <div class="form-group">
+          <label for="numSenha">Número da Senha / Inscrição:</label>
+          <input type="number" id="numSenha" placeholder="Ex: 1" min="1" required>
+        </div>
+
+        <h3 style="font-size: 0.95rem; color: #ccc; margin: 15px 0 10px 0;">Cavaleiros do Trio:</h3>
+
+        <div class="form-group">
+          <label for="cavaleiro1">1º Cavaleiro:</label>
+          <input type="text" id="cavaleiro1" placeholder="Nome do integrante 1" required>
+        </div>
+
+        <div class="form-group">
+          <label for="cavaleiro2">2º Cavaleiro:</label>
+          <input type="text" id="cavaleiro2" placeholder="Nome do integrante 2" required>
+        </div>
+
+        <div class="form-group">
+          <label for="cavaleiro3">3º Cavaleiro:</label>
+          <input type="text" id="cavaleiro3" placeholder="Nome do integrante 3" required>
+        </div>
+
+        <div class="form-group">
+          <label for="animaisInfo">Animais / Observações (Opcional):</label>
+          <input type="text" id="animaisInfo" placeholder="Ex: Cavalos ou Haras">
+        </div>
+
+        <button type="submit" class="btn-salvar" id="btnSalvarTrio" disabled>Cadastrar Trio</button>
+      </form>
+    </section>
+
+    <!-- Lista de Trios Cadastrados -->
+    <section class="secao-card">
+
+      <section class="secao-card" style="margin-bottom: 25px; background: #262626;">
+        <h2>SELECIONE A PROVA E CATEGORIA</h2>
+        <div class="grid-2-col">
+          <div class="form-group">
+            <label for="selectCompeticao">Competição:</label>
+            <select id="selectCompeticao">
+              <option value="">Carregando competições...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="selectCategoria">Categoria:</label>
+            <select id="selectCategoria" disabled>
+              <option value="">Selecione uma competição primeiro</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <h2 id="tituloListaTrios">TRIOS INSCRITOS</h2>
+      <div class="tabela-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Senha</th>
+              <th>Integrantes do Trio</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaTrios">
+            <tr>
+              <td colspan="2" style="text-align: center; color: #888;">Selecione a categoria para ver as inscrições.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { firebaseConfig } from "./firebase-config.js";
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    import { 
+      auth, 
+      db, 
+      collection, 
+      addDoc, 
+      updateDoc,
+      getDocs, 
+      getDoc,
+      doc,
+      query, 
+      where, 
+      onAuthStateChanged,
+      signOut 
+    } from "./firebase-config.js";
 
     let currentUser = null;
+    let competicoesCache = {};
+    let selectedCompId = localStorage.getItem("selectedCompId") || null;
+    let selectedCategoriaNome = null;
+    let selectedCategoriaData = null;
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-      } else {
-        window.location.href = "login.html";
+    const selectCompeticao = document.getElementById("selectCompeticao");
+    const selectCategoria = document.getElementById("selectCategoria");
+    const btnSalvarTrio = document.getElementById("btnSalvarTrio");
+    const tabelaTrios = document.getElementById("tabelaTrios");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "./index.html";
+        return;
       }
+      currentUser = user;
+      await carregarCompeticoes();
     });
 
-    document.getElementById("formCadastro").addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      if (!currentUser) return;
-
-      const int1 = document.getElementById("int1").value.trim();
-      const int2 = document.getElementById("int2").value.trim();
-      const int3 = document.getElementById("int3").value.trim();
-
+    async function carregarCompeticoes() {
       try {
-        // 1. Busca limite global
-        const configSnap = await getDoc(doc(db, "configuracoesGlobal", "sistema"));
-        let limiteGlobal = 100;
-        if (configSnap.exists()) {
-          limiteGlobal = configSnap.data().limiteSenhasGlobal || 100;
-        }
+        const q = query(
+          collection(db, "competicoes"), 
+          where("organizadorId", "==", currentUser.uid)
+        );
+        const snapshot = await getDocs(q);
 
-        // 2. Contabiliza total de trios do organizador
-        const qTrios = query(collection(db, "trios"), where("organizadorId", "==", currentUser.uid));
-        const triosSnap = await getDocs(qTrios);
+        selectCompeticao.innerHTML = '<option value="">-- Selecione uma Competição --</option>';
 
-        if (triosSnap.size >= limiteGlobal) {
-          alert(`⚠️ LIMITE ATINGIDO! Você atingiu o limite máximo de ${limiteGlobal} senhas cadastradas.`);
+        if (snapshot.empty) {
+          selectCompeticao.innerHTML = '<option value="">Nenhuma competição cadastrada</option>';
           return;
         }
 
-        // 3. Cadastra o Trio
-        await addDoc(collection(db, "trios"), {
-          integrantes: [int1, int2, int3],
-          organizadorId: currentUser.uid,
-          criadoEm: new Date()
+        competicoesCache = {};
+        snapshot.forEach(docSnap => {
+          const comp = docSnap.data();
+          competicoesCache[docSnap.id] = comp;
+
+          const option = document.createElement("option");
+          option.value = docSnap.id;
+          option.textContent = `${comp.nome} (${comp.dataInicio || comp.data})`;
+          selectCompeticao.appendChild(option);
         });
 
-        alert("Trio cadastrado com sucesso!");
-        document.getElementById("formCadastro").reset();
+        if (selectedCompId && competicoesCache[selectedCompId]) {
+          selectCompeticao.value = selectedCompId;
+          atualizarCategoriasSelect(selectedCompId);
+        }
 
-      } catch (err) {
-        console.error("Erro ao cadastrar trio:", err);
-        alert("Erro ao realizar o cadastro: " + err.message);
+      } catch (error) {
+        console.error("Erro ao carregar competições:", error);
       }
+    }
+
+    function atualizarCategoriasSelect(compId) {
+      selectCategoria.innerHTML = '<option value="">-- Selecione uma Categoria --</option>';
+      btnSalvarTrio.disabled = true;
+
+      if (!compId || !competicoesCache[compId]) {
+        selectCategoria.disabled = true;
+        return;
+      }
+
+      const categorias = competicoesCache[compId].categorias || [];
+      if (categorias.length === 0) {
+        selectCategoria.innerHTML = '<option value="">Sem categorias cadastradas</option>';
+        selectCategoria.disabled = true;
+        return;
+      }
+
+      categorias.forEach(cat => {
+        const option = document.createElement("option");
+        const catData = cat.data || competicoesCache[compId].dataInicio || "";
+        option.value = `${cat.nome}|${catData}`;
+        option.textContent = `${cat.nome} (${catData})`;
+        selectCategoria.appendChild(option);
+      });
+
+      selectCategoria.disabled = false;
+    }
+
+    selectCompeticao.addEventListener("change", (e) => {
+      selectedCompId = e.target.value;
+      localStorage.setItem("selectedCompId", selectedCompId);
+      atualizarCategoriasSelect(selectedCompId);
+      tabelaTrios.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #888;">Selecione a categoria.</td></tr>';
+    });
+
+    selectCategoria.addEventListener("change", (e) => {
+      const val = e.target.value;
+      if (val) {
+        const parts = val.split("|");
+        selectedCategoriaNome = parts[0];
+        selectedCategoriaData = parts[1] || "";
+
+        btnSalvarTrio.disabled = false;
+        document.getElementById("tituloListaTrios").innerText = `TRIOS INSCRITOS - ${selectedCategoriaNome.toUpperCase()} (${selectedCategoriaData})`;
+        carregarTriosCadastrados();
+        sugerirProximaSenha();
+      } else {
+        selectedCategoriaNome = null;
+        selectedCategoriaData = null;
+        btnSalvarTrio.disabled = true;
+        document.getElementById("tituloListaTrios").innerText = "TRIOS INSCRITOS";
+      }
+    });
+
+    async function sugerirProximaSenha() {
+      if (!selectedCompId || !selectedCategoriaNome) return;
+
+      try {
+        const q = query(
+          collection(db, "trios"),
+          where("competicaoId", "==", selectedCompId),
+          where("categoria", "==", selectedCategoriaNome),
+          where("categoriaData", "==", selectedCategoriaData),
+          where("fase", "==", "CLASSIFICACAO")
+        );
+        const snapshot = await getDocs(q);
+        document.getElementById("numSenha").value = snapshot.size + 1;
+      } catch (error) {
+        console.error("Erro ao calcular senha:", error);
+      }
+    }
+
+    function gerarChaveTrio(integrantes) {
+      return integrantes
+        .map(nome => nome.trim().toLowerCase())
+        .sort()
+        .join("|");
+    }
+
+    document.getElementById("formTrio").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!selectedCompId || !selectedCategoriaNome) {
+        alert("Selecione a competição e a categoria antes de cadastrar.");
+        return;
+      }
+
+      const senha = parseInt(document.getElementById("numSenha").value);
+      const c1 = document.getElementById("cavaleiro1").value.trim();
+      const c2 = document.getElementById("cavaleiro2").value.trim();
+      const c3 = document.getElementById("cavaleiro3").value.trim();
+      const animais = document.getElementById("animaisInfo").value.trim();
+
+      const novoTrioChave = gerarChaveTrio([c1, c2, c3]);
+
+      try {
+        btnSalvarTrio.disabled = true;
+        btnSalvarTrio.innerText = "Verificando e Cadastrando...";
+
+        // 1. VERIFICAÇÃO DE COBRANÇA GLOBAL E LIMITE DE SENHAS DINÂMICO
+        const configGlobalDoc = await getDoc(doc(db, "configuracoesGlobal", "sistema"));
+        const configData = configGlobalDoc.exists() ? configGlobalDoc.data() : {};
+        
+        const cobrancaAtiva = configData.cobrancaAtiva === true;
+        const limiteSenhasGlobal = configData.limiteSenhas || 100;
+
+        const compDados = competicoesCache[selectedCompId];
+
+        if (cobrancaAtiva) {
+          const qTodasSenhasComp = query(
+            collection(db, "trios"),
+            where("competicaoId", "==", selectedCompId)
+          );
+          const snapTodasSenhas = await getDocs(qTodasSenhasComp);
+          const totalSenhasAtuais = snapTodasSenhas.size;
+          const estaLiberado = compDados && compDados.assinaturaLiberada === true;
+
+          if (totalSenhasAtuais >= limiteSenhasGlobal && !estaLiberado) {
+            alert(`⚠️ LIMITE ATINGIDO! Esta competição atingiu o limite gratuito de ${limiteSenhasGlobal} senhas. Para cadastrar mais senhas, é necessário realizar a assinatura/liberação do evento.`);
+            return;
+          }
+        }
+
+        // 2. VERIFICAÇÃO DE TRIO DUPLICADO
+        const q = query(
+          collection(db, "trios"),
+          where("competicaoId", "==", selectedCompId),
+          where("categoria", "==", selectedCategoriaNome),
+          where("categoriaData", "==", selectedCategoriaData),
+          where("fase", "==", "CLASSIFICACAO")
+        );
+        const snapshot = await getDocs(q);
+
+        let trioDuplicado = false;
+        snapshot.forEach(docSnap => {
+          const trioExistente = docSnap.data();
+          if (trioExistente.integrantes && trioExistente.integrantes.length === 3) {
+            const chaveExistente = gerarChaveTrio(trioExistente.integrantes);
+            if (chaveExistente === novoTrioChave) {
+              trioDuplicado = true;
+            }
+          }
+        });
+
+        if (trioDuplicado) {
+          alert(`⚠️ ATENÇÃO: O trio composto por "${c1}", "${c2}" e "${c3}" JÁ ESTÁ CADASTRADO nesta categoria!`);
+          return;
+        }
+
+        // 3. SALVAR TRIO PRINCIPAL E ESPELHAR (SE HOUVER CATEGORIA EMBUTIDA)
+        const vinculo = compDados ? compDados.vinculoEmbutido : null;
+
+        const dadosNovoTrio = {
+          competicaoId: selectedCompId || "",
+          categoria: selectedCategoriaNome || "",
+          categoriaData: selectedCategoriaData || "",
+          fase: "CLASSIFICACAO",
+          senha: senha,
+          integrantes: [c1, c2, c3],
+          animais: animais || "",
+          criadoEm: new Date(),
+          status: "INSCRITO"
+        };
+
+        const novoTrioDoc = await addDoc(collection(db, "trios"), dadosNovoTrio);
+
+        // Se houver vínculo de categoria embutida (qualquer nome)
+        if (vinculo && vinculo.catPai === selectedCategoriaNome && vinculo.catEspelho) {
+          const dadosTrioEspelho = {
+            ...dadosNovoTrio,
+            categoria: vinculo.catEspelho,
+            categoriaEspelho: true,
+            trioPaiId: novoTrioDoc.id
+          };
+
+          const trioEspelhoDoc = await addDoc(collection(db, "trios"), dadosTrioEspelho);
+
+          // Atualiza a referência cruzada
+          await updateDoc(doc(db, "trios", novoTrioDoc.id), { trioEspelhoId: trioEspelhoDoc.id });
+        }
+
+        alert("Trio cadastrado com sucesso!");
+
+        document.getElementById("cavaleiro1").value = "";
+        document.getElementById("cavaleiro2").value = "";
+        document.getElementById("cavaleiro3").value = "";
+        document.getElementById("animaisInfo").value = "";
+
+        await carregarTriosCadastrados();
+        await sugerirProximaSenha();
+
+      } catch (error) {
+        console.error("Erro ao salvar trio:", error);
+        alert("Erro ao salvar no banco de dados: " + error.message);
+      } finally {
+        btnSalvarTrio.disabled = false;
+        btnSalvarTrio.innerText = "Cadastrar Trio";
+      }
+    });
+
+    async function carregarTriosCadastrados() {
+      tabelaTrios.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #888;">Carregando trios...</td></tr>';
+
+      try {
+        const q = query(
+          collection(db, "trios"),
+          where("competicaoId", "==", selectedCompId),
+          where("categoria", "==", selectedCategoriaNome),
+          where("categoriaData", "==", selectedCategoriaData),
+          where("fase", "==", "CLASSIFICACAO")
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          tabelaTrios.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #888;">Nenum trio cadastrado nesta categoria.</td></tr>';
+          return;
+        }
+
+        const trios = [];
+        snapshot.forEach(docSnap => {
+          trios.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        trios.sort((a, b) => a.senha - b.senha);
+
+        tabelaTrios.innerHTML = "";
+        trios.forEach(trio => {
+          const tr = document.createElement("tr");
+          const nomes = trio.integrantes ? trio.integrantes.join(" / ") : "";
+          const obs = trio.animais ? `<br><small style="color:#aaa;">${trio.animais}</small>` : "";
+
+          tr.innerHTML = `
+            <td><span class="badge-senha">#${trio.senha}</span></td>
+            <td><strong>${nomes}</strong>${obs}</td>
+          `;
+
+          tabelaTrios.appendChild(tr);
+        });
+
+      } catch (error) {
+        console.error("Erro ao carregar trios:", error);
+        tabelaTrios.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #e76f51;">Erro ao carregar lista de trios.</td></tr>';
+      }
+    }
+
+    document.getElementById("btnIrAdmin").addEventListener("click", () => {
+      if (selectedCompId) {
+        localStorage.setItem("selectedCompId", selectedCompId);
+      }
+      window.location.href = "./admin.html";
+    });
+
+    document.getElementById("btnSair").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "./index.html");
     });
   </script>
 </body>

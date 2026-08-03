@@ -1,139 +1,1077 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel do Juiz / Mesa de Som</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administração & Cronometragem - Team Penning</title>
+  <script type="module" src="./firebase-config.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-    h1, h2 { color: #333; }
-    .section { background: #fff; padding: 15px; margin-bottom: 20px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #eee; }
-    button { padding: 8px 12px; margin-right: 5px; cursor: pointer; }
-    input, select { padding: 6px; margin: 5px 0; }
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-green: #2a9d8f;
+      --accent-gold: #ffb703;
+      --accent-blue: #0077b6;
+      --danger-red: #e76f51;
+      --text-light: #f8f9fa;
+      --input-bg: #2b2b2b;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+    header h1 { color: var(--accent-gold); font-size: 1.6rem; text-transform: uppercase; }
+
+    .btn-header { background: var(--accent-gold); color: #000; font-weight: bold; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: 0.2s; text-decoration: none; font-size: 0.85rem; }
+    .btn-header:hover { opacity: 0.9; }
+
+    .admin-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+    @media (max-width: 950px) { .admin-grid { grid-template-columns: 1fr; } }
+
+    .card { background-color: var(--card-bg); border-radius: 8px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+    .card h2 { color: var(--accent-gold); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+
+    .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+    .card-header-flex h2 { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #ccc; margin-bottom: 5px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px; background-color: var(--input-bg);
+      border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.95rem;
+    }
+
+    .info-regulamento-box {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+    .info-regulamento-box p { margin-bottom: 6px; color: #ddd; }
+    .info-regulamento-box strong { color: var(--accent-gold); }
+
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 8px; font-size: 0.9rem; }
+    .btn:disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
+    .btn-primary { background-color: var(--accent-green); color: #fff; }
+    .btn-blue { background-color: var(--accent-blue); color: #fff; }
+    .btn-warning { background-color: var(--accent-gold); color: #000; }
+    .btn-danger { background-color: var(--danger-red); color: #fff; }
+    .btn-sm { width: auto; padding: 4px 8px; font-size: 0.75rem; margin-bottom: 0; }
+
+    .mesa-juiz { background: linear-gradient(135deg, #1c2541, #0b132b); border: 2px solid var(--accent-gold); border-radius: 8px; padding: 20px; }
+    .trio-destaque { font-size: 1.4rem; font-weight: bold; color: #fff; margin-bottom: 8px; }
+    
+    .grid-inputs-corrida { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+    .grid-inputs-corrida label { font-size: 0.8rem; }
+    .grid-inputs-corrida input, .grid-inputs-corrida select { font-size: 1.1rem; font-weight: bold; text-align: center; }
+
+    .tabela-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+    th { color: var(--accent-gold); background: #262626; }
+    tr:nth-child(even) { background-color: #1a1a1a; }
+
+    tr.troca-bateria {
+      border-bottom: 3px solid var(--danger-red) !important;
+      background-color: rgba(231, 111, 81, 0.18) !important;
+    }
+    .badge-troca { background: var(--danger-red); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 6px; display: inline-block; }
+    .badge-bateria { background: #3a86ff; color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .badge-espelho { background: #e0aaff; color: #3c096c; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 6px; display: inline-block; }
+
+    .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+    .modal-content { background: var(--card-bg); padding: 25px; border-radius: 8px; width: 100%; max-width: 450px; border: 1px solid var(--accent-gold); max-height: 90vh; overflow-y: auto; }
+    .ocultar { display: none; }
   </style>
 </head>
 <body>
 
-  <h1>Painel de Controle do Evento</h1>
-  <div id="userInfo">Verificando autenticação...</div>
+  <header>
+    <h1>⏱️ PAINEL ADMINISTRATIVO E MESA DO JUIZ</h1>
+    <div>
+      <a href="./cadastro.html" class="btn-header">📝 INSCRITOS</a>
+      <a href="./config.html" class="btn-header">⚙️ CONFIG</a>
+      <button class="btn-header btn-danger" id="btnSair">SAIR</button>
+    </div>
+  </header>
 
-  <div class="section">
-    <h2>Seleção de Competição</h2>
-    <select id="selectCompeticao">
-      <option value="">Carregando competições...</option>
-    </select>
+  <div class="admin-grid">
+
+    <aside>
+      <article class="card">
+        <h2>1. Seleção e Transmissão</h2>
+        <div class="form-group">
+          <label for="selectCompeticao">Competição Ativa:</label>
+          <select id="selectCompeticao">
+            <option value="">Carregando competições...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="selectCategoria">Categoria / Fase Selecionada:</label>
+          <select id="selectCategoria" disabled>
+            <option value="">Selecione a competição</option>
+          </select>
+        </div>
+        <button class="btn btn-blue" id="btnAtivarPainel" disabled>📺 Transmitir Categoria p/ Painel.html</button>
+      </article>
+
+      <article class="card ocultar">
+        <h2>2. Regulamento da Categoria</h2>
+        <div class="info-regulamento-box">
+          <p>Nº de Baterias / Lotes: <strong id="lblQtdBaterias">--</strong></p>
+          <p>Corridas por Lote/Bateria: <strong id="lblLimiteGado">--</strong></p>
+          <p>Classificados por Bateria: <strong id="lblClassificados">--</strong></p>
+        </div>
+        <button type="button" class="btn btn-warning" onclick="window.location.href='./config.html'">⚙️ Ir para Configurações Modificar</button>
+      </article>
+
+      <article class="card">
+        <h2>3. Sorteio de Entrada (Start List)</h2>
+        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 12px;">
+          Gera a ordem de pista e transmite o sorteio em tempo real para a tela do Painel/TV.
+        </p>
+        <button class="btn btn-warning" id="btnRealizarSorteio" disabled>🎲 Realizar e Transmitir Sorteio Live</button>
+        <button class="btn btn-danger" id="btnEncerrarSorteioLive" style="display: none;">📺 Encerrar Sorteio no Painel</button>
+      </article>
+
+      <article class="card">
+        <h2>4. Inscrições de Última Hora</h2>
+        <button class="btn btn-primary" id="btnAbrirModalTrio" disabled>+ Cadastrar Novo Trio (Senha)</button>
+      </article>
+    </aside>
+
+    <main>
+      <article class="mesa-juiz">
+        <h2 style="color: var(--accent-gold); border: none; padding: 0;">⏱️ MESA DO JUIZ DE PISTA</h2>
+        
+        <div class="trio-destaque" id="juizTrioAtual">Selecione uma categoria ativa</div>
+        <div id="juizTrioDetalhes" style="color: #aaa; font-size: 0.9rem;">Ordem de Pista: -- | Senha: -- | Bateria: --</div>
+
+        <form id="formLancarResultado" style="margin-top: 15px;">
+          <div class="grid-inputs-corrida">
+            <div>
+              <label for="inputTempo">Tempo Final (s):</label>
+              <input type="number" step="0.01" id="inputTempo" placeholder="00.00" disabled required>
+            </div>
+            <div>
+              <label for="inputBoiSorteado">Boi Sorteado:</label>
+              <input type="text" id="inputBoiSorteado" placeholder="Ex: 07" disabled required>
+            </div>
+            <div>
+              <label for="inputQuantidadeBois">Bois no Curral:</label>
+              <select id="inputQuantidadeBois" disabled>
+                <option value="3">3 Bois</option>
+                <option value="2">2 Bois</option>
+                <option value="1">1 Boi</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+            <button type="button" class="btn btn-primary" id="btnConfirmarTempo" disabled>✅ Confirmar Tempo</button>
+            <button type="button" class="btn btn-warning" id="btnSAT" disabled>⚠️ S.A.T / N.T.</button>
+            <button type="button" class="btn btn-danger" id="btnDO" disabled>🚫 D.O.</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card" style="margin-top: 20px;">
+        <div class="card-header-flex">
+          <h2>Próximos Corredores / Fila da Categoria</h2>
+          <button class="btn btn-warning btn-sm" id="btnCompartilharLista" disabled>📄 Compartilhar Lista (PDF)</button>
+        </div>
+        <div class="tabela-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Ordem</th>
+                <th>Bateria</th>
+                <th>Senha</th>
+                <th>Integrantes</th>
+                <th>Boi</th>
+                <th>Tempo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbTriosAdmin">
+              <tr><td colspan="8" style="text-align:center; color:#888;">Selecione uma categoria...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </main>
+
   </div>
 
-  <div class="section">
-    <h2>Gerenciamento do Placar / Prova</h2>
-    <table id="tabelaTrios">
-      <thead>
-        <tr>
-          <th>Nº</th>
-          <th>Integrantes / Categoria</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="3">Selecione uma competição.</td></tr>
-      </tbody>
-    </table>
+  <div class="modal" id="modalTrio">
+    <div class="modal-content">
+      <h2 style="color: var(--accent-gold); margin-bottom: 15px;">Cadastrar Novo Trio</h2>
+      <form id="formModalTrio">
+        <div class="form-group">
+          <label for="modalSenha">Número da Senha:</label>
+          <input type="number" id="modalSenha" min="1" required>
+        </div>
+        <div class="form-group">
+          <label for="modalC1">1º Cavaleiro:</label>
+          <input type="text" id="modalC1" required>
+        </div>
+        <div class="form-group">
+          <label for="modalC2">2º Cavaleiro:</label>
+          <input type="text" id="modalC2" required>
+        </div>
+        <div class="form-group">
+          <label for="modalC3">3º Cavaleiro:</label>
+          <input type="text" id="modalC3" required>
+        </div>
+        <div class="form-group">
+          <label for="modalAnimais">Animais / Obs:</label>
+          <input type="text" id="modalAnimais" placeholder="Opcional">
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary">Salvar Trio</button>
+          <button type="button" class="btn btn-danger" id="btnFecharModal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="modalEditarTrio">
+    <div class="modal-content">
+      <h2 style="color: var(--accent-gold); margin-bottom: 15px;">✏️ Editar Trio</h2>
+      <form id="formEditarTrio">
+        <input type="hidden" id="editTrioId">
+        <div class="form-group">
+          <label for="editSenha">Senha:</label>
+          <input type="number" id="editSenha" required>
+        </div>
+        <div class="form-group">
+          <label for="editC1">1º Cavaleiro:</label>
+          <input type="text" id="editC1" required>
+        </div>
+        <div class="form-group">
+          <label for="editC2">2º Cavaleiro:</label>
+          <input type="text" id="editC2" required>
+        </div>
+        <div class="form-group">
+          <label for="editC3">3º Cavaleiro:</label>
+          <input type="text" id="editC3" required>
+        </div>
+        <div class="form-group">
+          <label for="editBoi">Boi Sorteado:</label>
+          <input type="text" id="editBoi" placeholder="Ex: 07">
+        </div>
+        <div class="form-group">
+          <label for="editTempo">Tempo Final (s):</label>
+          <input type="number" step="0.01" id="editTempo" placeholder="Ex: 21.45">
+        </div>
+        <div class="form-group">
+          <label for="editStatus">Status:</label>
+          <select id="editStatus">
+            <option value="INSCRITO">INSCRITO</option>
+            <option value="AGUARDANDO">AGUARDANDO</option>
+            <option value="OK">OK</option>
+            <option value="SAT">SAT / N.T.</option>
+            <option value="DO">D.O.</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary">Atualizar Trio</button>
+          <button type="button" class="btn btn-danger" id="btnFecharModalEdit">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { firebaseConfig } from "./firebase-config.js";
+    import { 
+      auth, 
+      db, 
+      collection, 
+      addDoc, 
+      getDocs,
+      setDoc, 
+      doc, 
+      updateDoc, 
+      query, 
+      where, 
+      onSnapshot,
+      onAuthStateChanged,
+      signOut
+    } from "./firebase-config.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    let currentUser = null;
+    let competicoesCache = {};
+    let triosAtuais = [];
+    let trioAtualPista = null;
 
-    // Função de sanitização contra XSS
-    function escapeHTML(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    let selectedCompId = localStorage.getItem("selectedCompId") || null;
+    let selectedCategoriaNome = null;
+    let selectedCategoriaData = null;
+    let selectedFase = "CLASSIFICACAO";
+
+    let currentNumBaterias = 2;
+    let currentLimiteGado = 25;
+    let currentClassificados = 3;
+
+    const selectCompeticao = document.getElementById("selectCompeticao");
+    const selectCategoria = document.getElementById("selectCategoria");
+    const btnAtivarPainel = document.getElementById("btnAtivarPainel");
+    const btnAbrirModalTrio = document.getElementById("btnAbrirModalTrio");
+    const btnRealizarSorteio = document.getElementById("btnRealizarSorteio");
+    const btnEncerrarSorteioLive = document.getElementById("btnEncerrarSorteioLive");
+    const btnCompartilharLista = document.getElementById("btnCompartilharLista");
+
+    const lblQtdBaterias = document.getElementById("lblQtdBaterias");
+    const lblLimiteGado = document.getElementById("lblLimiteGado");
+    const lblClassificados = document.getElementById("lblClassificados");
+
+    const inputTempo = document.getElementById("inputTempo");
+    const inputBoiSorteado = document.getElementById("inputBoiSorteado");
+    const inputQuantidadeBois = document.getElementById("inputQuantidadeBois");
+    const btnConfirmarTempo = document.getElementById("btnConfirmarTempo");
+    const btnSAT = document.getElementById("btnSAT");
+    const btnDO = document.getElementById("btnDO");
+
+    const modalTrio = document.getElementById("modalTrio");
+    const btnFecharModal = document.getElementById("btnFecharModal");
+
+    const modalEditarTrio = document.getElementById("modalEditarTrio");
+    const btnFecharModalEdit = document.getElementById("btnFecharModalEdit");
+
+    function calcularBateria(ordemPista, tamanhoLote, numBaterias) {
+      if (!ordemPista || ordemPista <= 0) return 1;
+      const qtdBaterias = numBaterias || 2;
+      const loteTam = tamanhoLote || 25;
+      const indiceLote = Math.floor((ordemPista - 1) / loteTam);
+      return (indiceLote % qtdBaterias) + 1;
     }
 
-    onAuthStateChanged(auth, (user) => {
-      const userInfo = document.getElementById("userInfo");
-      if (user) {
-        userInfo.textContent = `Logado como: ${user.email}`;
-        carregarCompeticoes(user.uid);
-      } else {
-        window.location.href = "login.html";
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "./index.html";
+        return;
       }
+      currentUser = user;
+      carregarCompeticoes();
     });
 
-    function carregarCompeticoes(userId) {
-      const select = document.getElementById("selectCompeticao");
-      const q = query(collection(db, "competicoes"), where("organizadorId", "==", userId));
-      
-      onSnapshot(q, (snapshot) => {
-        select.innerHTML = '<option value="">Selecione uma competição...</option>';
-        snapshot.forEach((doc) => {
-          const comp = doc.data();
-          const option = document.createElement("option");
-          option.value = doc.id;
-          option.textContent = escapeHTML(comp.nome || doc.id);
-          select.appendChild(option);
-        });
-      });
-    }
+    async function carregarCompeticoes() {
+      try {
+        const q = query(
+          collection(db, "competicoes"), 
+          where("organizadorId", "==", currentUser.uid)
+        );
+        const snapshot = await getDocs(q);
 
-    document.getElementById("selectCompeticao").addEventListener("change", (e) => {
-      const compId = e.target.value;
-      if (compId) carregarTrios(compId);
-    });
+        selectCompeticao.innerHTML = '<option value="">-- Selecione uma Competição --</option>';
 
-    function carregarTrios(compId) {
-      const tbody = document.querySelector("#tabelaTrios tbody");
-      const q = query(collection(db, "trios"), where("competicaoId", "==", compId));
-
-      onSnapshot(q, (snapshot) => {
-        tbody.innerHTML = "";
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="3">Nenhum trio cadastrado.</td></tr>';
+          selectCompeticao.innerHTML = '<option value="">Nenhuma competição encontrada</option>';
           return;
         }
 
-        snapshot.forEach((docSnap) => {
-          const trio = docSnap.data();
-          const tr = document.createElement("tr");
+        competicoesCache = {};
+        snapshot.forEach(docSnap => {
+          const comp = docSnap.data();
+          competicoesCache[docSnap.id] = comp;
 
-          const nomesSanitizados = trio.integrantes 
-            ? trio.integrantes.map(i => escapeHTML(i)).join(" / ") 
-            : "Sem integrantes";
+          const option = document.createElement("option");
+          option.value = docSnap.id;
+          option.textContent = `${comp.nome} (${comp.dataInicio})`;
+          selectCompeticao.appendChild(option);
+        });
 
-          tr.innerHTML = `
-            <td>${escapeHTML(trio.senha || '-')}</td>
-            <td>${nomesSanitizados}</td>
-            <td>
-              <button onclick="chamarTrio('${docSnap.id}')">Chamar na Tela</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
+        if (selectedCompId && competicoesCache[selectedCompId]) {
+          selectCompeticao.value = selectedCompId;
+          atualizarCategoriasSelect(selectedCompId);
+        }
+
+      } catch (error) {
+        console.error("Erro ao carregar competições:", error);
+      }
+    }
+
+    async function atualizarCategoriasSelect(compId) {
+      selectCategoria.innerHTML = '<option value="">Carregando categorias...</option>';
+      
+      if (!compId || !competicoesCache[compId]) {
+        selectCategoria.innerHTML = '<option value="">-- Selecione uma Categoria --</option>';
+        selectCategoria.disabled = true;
+        desativarControles();
+        return;
+      }
+
+      const comp = competicoesCache[compId];
+      const catEspelhoNome = comp.vinculoEmbutido ? comp.vinculoEmbutido.catEspelho : null;
+
+      const etapasFinalizadas = new Set();
+      try {
+        const qClassificados = query(
+          collection(db, "classificados"),
+          where("competicaoId", "==", compId)
+        );
+        const snapClassificados = await getDocs(qClassificados);
+        snapClassificados.forEach(d => {
+          const data = d.data();
+          if (data.categoria) {
+            const fase = data.faseOrigem || "CLASSIFICACAO";
+            const chaveUnica = `${data.categoria}|${data.dataCategoria || ""}|${fase}`;
+            etapasFinalizadas.add(chaveUnica);
+          }
+        });
+      } catch (err) {
+        console.error("Erro ao consultar etapas finalizadas:", err);
+      }
+
+      const categoriasConfig = comp.categorias || [];
+      const classificatoriasAtivas = categoriasConfig.filter(cat => {
+        const catData = cat.data || comp.dataInicio || "";
+        const chaveUnica = `${cat.nome}|${catData}|CLASSIFICACAO`;
+        
+        if (catEspelhoNome && cat.nome === catEspelhoNome) {
+          return false;
+        }
+
+        return !etapasFinalizadas.has(chaveUnica);
+      });
+
+      const fasesEspeciaisEncontradas = new Map();
+      try {
+        const qTrios = query(
+          collection(db, "trios"),
+          where("competicaoId", "==", compId)
+        );
+        const snapTrios = await getDocs(qTrios);
+        snapTrios.forEach(d => {
+          const data = d.data();
+          const fase = data.fase || "CLASSIFICACAO";
+          if (fase === "SEMIFINAL" || fase === "FINAL") {
+            const catData = data.categoriaData || data.data || "";
+            const chaveUnica = `${data.categoria}|${catData}|${fase}`;
+            
+            if (!etapasFinalizadas.has(chaveUnica) && !fasesEspeciaisEncontradas.has(chaveUnica)) {
+              fasesEspeciaisEncontradas.set(chaveUnica, {
+                nome: data.categoria,
+                data: catData,
+                fase: fase
+              });
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Erro ao consultar fases especiais:", err);
+      }
+
+      selectCategoria.innerHTML = '<option value="">-- Selecione uma Categoria/Fase --</option>';
+      const totalDisponivel = classificatoriasAtivas.length + fasesEspeciaisEncontradas.size;
+
+      if (totalDisponivel === 0) {
+        selectCategoria.innerHTML = '<option value="">Nenhuma etapa pendente</option>';
+        selectCategoria.disabled = true;
+        desativarControles();
+        limparPistaETabela();
+        return;
+      }
+
+      if (classificatoriasAtivas.length > 0) {
+        const groupNormal = document.createElement("optgroup");
+        groupNormal.label = "Etapa Classificatória";
+        classificatoriasAtivas.forEach(cat => {
+          const option = document.createElement("option");
+          const catData = cat.data || comp.dataInicio || "";
+          option.value = `${cat.nome}|${catData}|CLASSIFICACAO`;
+          
+          const tagEmbutida = (comp.vinculoEmbutido && comp.vinculoEmbutido.catPai === cat.nome)
+            ? ` [c/ ${comp.vinculoEmbutido.catEspelho} Embutida]`
+            : "";
+
+          option.textContent = `${cat.nome}${tagEmbutida} (${catData})`;
+          groupNormal.appendChild(option);
+        });
+        selectCategoria.appendChild(groupNormal);
+      }
+
+      if (fasesEspeciaisEncontradas.size > 0) {
+        const groupEspecial = document.createElement("optgroup");
+        groupEspecial.label = "🔥 Semifinais & 🏆 Finais";
+        fasesEspeciaisEncontradas.forEach(item => {
+          const option = document.createElement("option");
+          option.value = `${item.nome}|${item.data}|${item.fase}`;
+          const prefixo = item.fase === "SEMIFINAL" ? "🔥 [SEMIFINAL]" : "🏆 [FINAL]";
+          option.textContent = `${prefixo} ${item.nome} (${item.data})`;
+          groupEspecial.appendChild(option);
+        });
+        selectCategoria.appendChild(groupEspecial);
+      }
+
+      selectCategoria.disabled = false;
+
+      if (!selectedCategoriaNome) {
+        desativarControles();
+        limparPistaETabela();
+      }
+    }
+
+    function limparPistaETabela() {
+      document.getElementById("juizTrioAtual").innerText = "Selecione uma categoria ativa";
+      document.getElementById("juizTrioDetalhes").innerText = "Ordem de Pista: -- | Senha: -- | Bateria: --";
+      document.getElementById("tbTriosAdmin").innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">Selecione uma categoria...</td></tr>';
+      lblQtdBaterias.innerText = "--";
+      lblLimiteGado.innerText = "--";
+      lblClassificados.innerText = "--";
+    }
+
+    selectCompeticao.addEventListener("change", (e) => {
+      selectedCompId = e.target.value;
+      localStorage.setItem("selectedCompId", selectedCompId);
+      atualizarCategoriasSelect(selectedCompId);
+    });
+
+    selectCategoria.addEventListener("change", (e) => {
+      const val = e.target.value;
+      if (val) {
+        const parts = val.split("|");
+        selectedCategoriaNome = parts[0];
+        selectedCategoriaData = parts[1] || "";
+        selectedFase = parts[2] || "CLASSIFICACAO";
+
+        jaFinalizouCategoria = false;
+        
+        carregarDadosCategoria();
+        ativarControles();
+      } else {
+        desativarControles();
+      }
+    });
+
+    btnAtivarPainel.addEventListener("click", async () => {
+      if (!selectedCompId || !selectedCategoriaNome) {
+        alert("Selecione uma competição e uma categoria primeiro!");
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "competicoes", selectedCompId), {
+          painelAtivo: true,
+          categoriaAtivaPainel: selectedCategoriaNome,
+          faseAtivaPainel: selectedFase,
+          dataAtivaPainel: selectedCategoriaData,
+          atualizadoEm: new Date()
+        });
+
+        await setDoc(doc(db, "painel_global", "ativo"), {
+          competicaoId: selectedCompId,
+          categoriaAtiva: selectedCategoriaNome,
+          faseAtiva: selectedFase,
+          dataAtiva: selectedCategoriaData,
+          atualizadoEm: new Date()
+        }, { merge: true });
+
+        alert("📺 Categoria ativada no Painel em tempo real com sucesso! Todos os monitores sincronizados.");
+      } catch (err) {
+        alert("Erro ao ativar painel: " + err.message);
+      }
+    });
+
+    function resetarEFocarMesaJuiz() {
+      inputTempo.value = "";
+      inputBoiSorteado.value = "";
+      inputQuantidadeBois.value = "3";
+      
+      if (!inputTempo.disabled && trioAtualPista) {
+        setTimeout(() => {
+          inputTempo.focus();
+          inputTempo.select();
+        }, 100);
+      }
+    }
+
+    inputTempo.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (inputTempo.value.trim() !== "") {
+          inputBoiSorteado.focus();
+          inputBoiSorteado.select();
+        }
+      }
+    });
+
+    document.getElementById("formLancarResultado").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target !== inputTempo) {
+        e.preventDefault();
+        btnConfirmarTempo.click();
+      }
+    });
+
+    function ativarControles() {
+      btnAtivarPainel.disabled = false;
+      btnAbrirModalTrio.disabled = false;
+      btnRealizarSorteio.disabled = false;
+      btnCompartilharLista.disabled = false;
+      inputTempo.disabled = false;
+      inputBoiSorteado.disabled = false;
+      inputQuantidadeBois.disabled = false;
+      btnConfirmarTempo.disabled = false;
+      btnSAT.disabled = false;
+      btnDO.disabled = false;
+
+      resetarEFocarMesaJuiz();
+    }
+
+    function desativarControles() {
+      btnAtivarPainel.disabled = true;
+      btnAbrirModalTrio.disabled = true;
+      btnRealizarSorteio.disabled = true;
+      btnCompartilharLista.disabled = true;
+      inputTempo.disabled = true;
+      inputBoiSorteado.disabled = true;
+      inputQuantidadeBois.disabled = true;
+      btnConfirmarTempo.disabled = true;
+      btnSAT.disabled = true;
+      btnDO.disabled = true;
+    }
+
+    async function lancarResultado(status) {
+      if (!trioAtualPista) {
+        alert("Não há trios pendentes na pista.");
+        return;
+      }
+
+      const tempo = parseFloat(inputTempo.value);
+      const boi = inputBoiSorteado.value.trim();
+      const boisCurral = parseInt(inputQuantidadeBois.value);
+
+      if (status === "OK" && (!tempo || !boi)) {
+        alert("Preencha o tempo final e o boi sorteado!");
+        if (!tempo) inputTempo.focus();
+        else if (!boi) inputBoiSorteado.focus();
+        return;
+      }
+
+      try {
+        const dadosResultado = {
+          tempo: status === "OK" ? tempo : null,
+          boiSorteado: boi || "N/A",
+          boisCurralados: boisCurral,
+          status: status,
+          finalizadoEm: new Date()
+        };
+
+        const trioRef = doc(db, "trios", trioAtualPista.id);
+        await updateDoc(trioRef, dadosResultado);
+
+        if (trioAtualPista?.trioEspelhoId) {
+          const trioEspelhoRef = doc(db, "trios", trioAtualPista.trioEspelhoId);
+          await updateDoc(trioEspelhoRef, dadosResultado);
+        }
+
+        resetarEFocarMesaJuiz();
+      } catch (err) {
+        alert("Erro ao gravar resultado: " + err.message);
+      }
+    }
+
+    function carregarDadosCategoria() {
+      const comp = competicoesCache[selectedCompId];
+      if (!comp) return;
+
+      const catInfo = comp.categorias ? comp.categorias.find(c => c.nome === selectedCategoriaNome) : null;
+
+      if (selectedFase === "CLASSIFICACAO") {
+        if (catInfo) {
+          currentNumBaterias = catInfo.qtdBaterias || 2;
+          currentLimiteGado = catInfo.limiteGado || 25;
+          currentClassificados = catInfo.classificadosPorBateria || catInfo.classificadosLote || 3;
+        }
+      } else if (selectedFase === "SEMIFINAL") {
+        currentNumBaterias = catInfo?.qtdBateriasSemifinal || comp.qtdBateriasSemifinal || comp.qtdBateriasFaseEspecial || 1; 
+        currentLimiteGado = catInfo?.limiteGadoSemifinal || comp.limiteGadoSemifinal || comp.limiteGadoFaseEspecial || 25;
+        currentClassificados = catInfo?.classificadosSemifinal || comp.classificadosSemifinal || comp.classificadosFaseEspecial || 7;
+      } else if (selectedFase === "FINAL") {
+        currentNumBaterias = catInfo?.qtdBateriasFinal || comp.qtdBateriasFinal || comp.qtdBateriasFaseEspecial || 1; 
+        currentLimiteGado = catInfo?.limiteGadoFinal || comp.limiteGadoFinal || comp.limiteGadoFaseEspecial || 25;
+        currentClassificados = catInfo?.classificadosFinal || comp.classificadosFinal || comp.classificadosFaseEspecial || 10;
+      }
+
+      lblQtdBaterias.innerText = currentNumBaterias;
+      lblLimiteGado.innerText = currentLimiteGado;
+      lblClassificados.innerText = currentClassificados;
+
+      let categoriasParaBuscar = [selectedCategoriaNome];
+      if (selectedFase === "CLASSIFICACAO" && comp.vinculoEmbutido && comp.vinculoEmbutido.catPai === selectedCategoriaNome) {
+        categoriasParaBuscar.push(comp.vinculoEmbutido.catEspelho);
+      }
+
+      let q = query(
+        collection(db, "trios"),
+        where("competicaoId", "==", selectedCompId),
+        where("categoria", "in", categoriasParaBuscar),
+        where("fase", "==", selectedFase)
+      );
+
+      onSnapshot(q, (snapshot) => {
+        triosAtuais = [];
+        snapshot.forEach(docSnap => {
+          triosAtuais.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        triosAtuais.sort((a, b) => (a.ordemPista || a.senha) - (b.ordemPista || b.senha));
+
+        atualizarTabelaAdmin();
+        atualizarMesaJuiz();
+        verificarEProcessarFinalizacaoCategoria();
+      });
+    }
+
+    btnRealizarSorteio.addEventListener("click", async () => {
+      if (triosAtuais.length === 0) {
+        alert("Não há trios inscritos nesta categoria para sortear!");
+        return;
+      }
+
+      if (!confirm("Confirmar o sorteio das ordens de entrada? Isso atualizará a transmissão ao vivo no Painel.")) return;
+
+      try {
+        const triosEmbaralhados = [...triosAtuais].sort(() => Math.random() - 0.5);
+
+        for (let i = 0; i < triosEmbaralhados.length; i++) {
+          const trioRef = doc(db, "trios", triosEmbaralhados[i].id);
+          await updateDoc(trioRef, { ordemPista: i + 1, status: "AGUARDANDO" });
+        }
+
+        await updateDoc(doc(db, "competicoes", selectedCompId), {
+          sorteioStatus: "EXIBINDO",
+          categoriaEmSorteio: selectedCategoriaNome,
+          faseEmSorteio: selectedFase
+        });
+
+        btnEncerrarSorteioLive.style.display = "block";
+        alert("Sorteio realizado! O Painel em qualquer PC agora exibe o Sorteio ao Vivo.");
+
+      } catch (err) {
+        alert("Erro ao realizar sorteio: " + err.message);
+      }
+    });
+
+    btnEncerrarSorteioLive.addEventListener("click", async () => {
+      try {
+        await updateDoc(doc(db, "competicoes", selectedCompId), {
+          sorteioStatus: "FINALIZADO"
+        });
+        btnEncerrarSorteioLive.style.display = "none";
+        alert("Sorteio encerrado! O Painel voltou para o monitoramento normal das corridas.");
+      } catch (err) {
+        alert("Erro ao encerrar exibição: " + err.message);
+      }
+    });
+
+    btnCompartilharLista.addEventListener("click", () => {
+      if (triosAtuais.length === 0) {
+        alert("Não há trios para gerar o relatório.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const docPdf = new jsPDF();
+
+      const compNome = competicoesCache[selectedCompId]?.nome || "Competição";
+
+      docPdf.setFontSize(16);
+      docPdf.text(`Ordem de Corridas - ${compNome}`, 14, 15);
+      docPdf.setFontSize(11);
+      docPdf.text(`Categoria: ${selectedCategoriaNome} | Fase: ${selectedFase} | Data: ${selectedCategoriaData}`, 14, 23);
+
+      const tableData = triosAtuais.map((trio) => {
+        const ordem = trio.ordemPista || trio.senha;
+        const bat = calcularBateria(ordem, currentLimiteGado, currentNumBaterias);
+        const integrantes = trio.integrantes ? trio.integrantes.join(", ") : "";
+        const tempo = trio.tempo ? `${parseFloat(trio.tempo).toFixed(2)}s` : "--";
+        
+        return [
+          `#${ordem}`,
+          `Bateria ${bat}`,
+          `#${trio.senha}`,
+          integrantes,
+          trio.boiSorteado || "--",
+          tempo,
+          trio.status || "INSCRITO"
+        ];
+      });
+
+      docPdf.autoTable({
+        startY: 28,
+        head: [['Ordem', 'Bateria', 'Senha', 'Integrantes do Trio', 'Boi', 'Tempo', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [42, 157, 143] }
+      });
+
+      docPdf.save(`Ordem_Corridas_${selectedCategoriaNome.replace(/\s+/g, '_')}_${selectedFase}.pdf`);
+    });
+
+    function atualizarTabelaAdmin() {
+      const tbBody = document.getElementById("tbTriosAdmin");
+      tbBody.innerHTML = "";
+
+      const triosPendentes = triosAtuais.filter(t => !t.tempo && t.status !== "SAT" && t.status !== "DO" && t.status !== "OK");
+
+      if (triosPendentes.length === 0) {
+        tbBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">Todos os trios desta etapa já correram!</td></tr>';
+        return;
+      }
+
+      const comp = competicoesCache[selectedCompId];
+
+      triosPendentes.forEach((trio) => {
+        const ordemNum = trio.ordemPista || trio.senha;
+        const ordem = trio.ordemPista ? `#${trio.ordemPista}` : "--";
+        const batNum = calcularBateria(ordemNum, currentLimiteGado, currentNumBaterias);
+        const tempo = trio.tempo ? `${parseFloat(trio.tempo).toFixed(2)}s` : "--";
+        const nomes = trio.integrantes ? trio.integrantes.join(" / ") : "";
+
+        const ehTrocaBateria = ordemNum > 0 && (ordemNum % currentLimiteGado === 0);
+        const classeTroca = ehTrocaBateria ? "troca-bateria" : "";
+        const tagTroca = ehTrocaBateria ? `<span class="badge-troca">⚠️ TROCA DE LOTE</span>` : "";
+
+        const tagEspelho = (comp && comp.vinculoEmbutido && trio.categoria === comp.vinculoEmbutido.catEspelho)
+          ? `<span class="badge-espelho">🎀 ${comp.vinculoEmbutido.catEspelho}</span>`
+          : "";
+
+        const tr = document.createElement("tr");
+        if (classeTroca) tr.className = classeTroca;
+
+        tr.innerHTML = `
+          <td><strong>${ordem}</strong> ${tagTroca}</td>
+          <td><span class="badge-bateria">Bat. ${batNum}</span></td>
+          <td><span class="badge-senha">#${trio.senha}</span></td>
+          <td>${nomes} ${tagEspelho}</td>
+          <td>${trio.boiSorteado || "--"}</td>
+          <td><strong>${tempo}</strong></td>
+          <td>${trio.status || "INSCRITO"}</td>
+          <td>
+            <button class="btn btn-warning btn-sm btn-editar-trio" data-id="${trio.id}">✏️ Editar</button>
+          </td>
+        `;
+
+        tbBody.appendChild(tr);
+      });
+
+      document.querySelectorAll(".btn-editar-trio").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const trioId = e.target.getAttribute("data-id");
+          abrirModalEdicao(trioId);
         });
       });
     }
 
-    window.chamarTrio = async (trioId) => {
+    function abrirModalEdicao(trioId) {
+      const trio = triosAtuais.find(t => t.id === trioId);
+      if (!trio) return;
+
+      document.getElementById("editTrioId").value = trio.id;
+      document.getElementById("editSenha").value = trio.senha || "";
+      document.getElementById("editC1").value = trio.integrantes ? trio.integrantes[0] || "" : "";
+      document.getElementById("editC2").value = trio.integrantes ? trio.integrantes[1] || "" : "";
+      document.getElementById("editC3").value = trio.integrantes ? trio.integrantes[2] || "" : "";
+      document.getElementById("editBoi").value = trio.boiSorteado || "";
+      document.getElementById("editTempo").value = trio.tempo || "";
+      document.getElementById("editStatus").value = trio.status || "INSCRITO";
+
+      modalEditarTrio.style.display = "flex";
+    }
+
+    btnFecharModalEdit.addEventListener("click", () => modalEditarTrio.style.display = "none");
+
+    document.getElementById("formEditarTrio").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById("editTrioId").value;
+      const senha = parseInt(document.getElementById("editSenha").value);
+      const c1 = document.getElementById("editC1").value.trim();
+      const c2 = document.getElementById("editC2").value.trim();
+      const c3 = document.getElementById("editC3").value.trim();
+      const boi = document.getElementById("editBoi").value.trim();
+      const tempoVal = document.getElementById("editTempo").value;
+      const status = document.getElementById("editStatus").value;
+
       try {
-        await updateDoc(doc(db, "transmissao", "atual"), { trioId: trioId, timestamp: Date.now() });
-        alert("Trio enviado para a tela!");
+        const trioRef = doc(db, "trios", id);
+        await updateDoc(trioRef, {
+          senha: senha,
+          integrantes: [c1, c2, c3],
+          boiSorteado: boi || "N/A",
+          tempo: tempoVal !== "" ? parseFloat(tempoVal) : null,
+          status: status
+        });
+
+        alert("Trio atualizado com sucesso!");
+        modalEditarTrio.style.display = "none";
       } catch (err) {
-        console.error("Erro ao chamar trio:", err);
+        alert("Erro ao atualizar trio: " + err.message);
       }
-    };
+    });
+
+    function atualizarMesaJuiz() {
+      trioAtualPista = triosAtuais.find(t => !t.tempo && t.status !== "SAT" && t.status !== "DO" && t.status !== "OK");
+
+      if (trioAtualPista) {
+        const ordemNum = trioAtualPista.ordemPista || trioAtualPista.senha;
+        const batNum = calcularBateria(ordemNum, currentLimiteGado, currentNumBaterias);
+        const comp = competicoesCache[selectedCompId];
+
+        const tagCat = (comp && comp.vinculoEmbutido && trioAtualPista.categoria === comp.vinculoEmbutido.catEspelho)
+          ? ` [🎀 ${comp.vinculoEmbutido.catEspelho}]`
+          : "";
+
+        document.getElementById("juizTrioAtual").innerText = trioAtualPista.integrantes.join(" • ") + tagCat;
+        document.getElementById("juizTrioDetalhes").innerText = `Ordem de Pista: #${trioAtualPista.ordemPista || '--'} | Senha: #${trioAtualPista.senha} | Bateria: ${batNum} | Fase: ${selectedFase}`;
+        
+        resetarEFocarMesaJuiz();
+      } else {
+        document.getElementById("juizTrioAtual").innerText = "Todos os trios desta etapa já correram.";
+        document.getElementById("juizTrioDetalhes").innerText = "Ordem de Pista: -- | Senha: -- | Bateria: --";
+      }
+    }
+
+    btnAbrirModalTrio.addEventListener("click", () => {
+      document.getElementById("modalSenha").value = triosAtuais.length + 1;
+      modalTrio.style.display = "flex";
+    });
+
+    btnFecharModal.addEventListener("click", () => modalTrio.style.display = "none");
+
+    document.getElementById("formModalTrio").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const senha = parseInt(document.getElementById("modalSenha").value);
+      const c1 = document.getElementById("modalC1").value.trim();
+      const c2 = document.getElementById("modalC2").value.trim();
+      const c3 = document.getElementById("modalC3").value.trim();
+      const animais = document.getElementById("modalAnimais").value.trim();
+
+      try {
+        await addDoc(collection(db, "trios"), {
+          competicaoId: selectedCompId,
+          categoria: selectedCategoriaNome,
+          categoriaData: selectedCategoriaData,
+          fase: selectedFase,
+          senha: senha,
+          integrantes: [c1, c2, c3],
+          animais: animais,
+          criadoEm: new Date(),
+          status: "INSCRITO"
+        });
+
+        alert("Trio adicionado com sucesso!");
+        modalTrio.style.display = "none";
+        document.getElementById("formModalTrio").reset();
+      } catch (err) {
+        alert("Erro ao cadastrar trio: " + err.message);
+      }
+    });
+
+    btnConfirmarTempo.addEventListener("click", () => lancarResultado("OK"));
+    btnSAT.addEventListener("click", () => lancarResultado("SAT"));
+    btnDO.addEventListener("click", () => lancarResultado("DO"));
+
+    let jaFinalizouCategoria = false;
+
+    async function verificarEProcessarFinalizacaoCategoria() {
+      if (triosAtuais.length === 0 || jaFinalizouCategoria) return;
+
+      const pendentes = triosAtuais.filter(t => !t.tempo && t.status !== "SAT" && t.status !== "DO" && t.status !== "OK");
+      if (pendentes.length > 0) return;
+
+      jaFinalizouCategoria = true;
+
+      const comp = competicoesCache[selectedCompId];
+
+      let categoriasPresentes = [selectedCategoriaNome];
+      if (comp && comp.vinculoEmbutido && comp.vinculoEmbutido.catPai === selectedCategoriaNome) {
+        categoriasPresentes.push(comp.vinculoEmbutido.catEspelho);
+      }
+
+      try {
+        for (const catNome of categoriasPresentes) {
+          const triosDaCat = triosAtuais.filter(t => t.categoria === catNome);
+
+          const baterias = {};
+          for (let i = 1; i <= currentNumBaterias; i++) {
+            baterias[i] = [];
+          }
+
+          triosDaCat.forEach(trio => {
+            if (trio.status === "OK" && trio.tempo > 0) {
+              const ordemNum = trio.ordemPista || trio.senha;
+              const batNum = calcularBateria(ordemNum, currentLimiteGado, currentNumBaterias);
+              if (baterias[batNum]) {
+                baterias[batNum].push(trio);
+              }
+            }
+          });
+
+          const resultadoFinalPorBateria = {};
+
+          for (let b = 1; b <= currentNumBaterias; b++) {
+            baterias[b].sort((a, b) => a.tempo - b.tempo);
+            
+            const classificadosBateria = baterias[b].slice(0, currentClassificados).map((t, idx) => ({
+              posicao: idx + 1,
+              trioId: t.id,
+              senha: t.senha,
+              integrantes: t.integrantes,
+              tempo: t.tempo,
+              boiSorteado: t.boiSorteado,
+              categoria: t.categoria
+            }));
+
+            resultadoFinalPorBateria[`bateria${b}`] = classificadosBateria;
+          }
+
+          const dataFormatada = (selectedCategoriaData || "").replace(/[^a-zA-Z0-9]/g, '_');
+          const nomeFormatado = catNome.replace(/\s+/g, '_');
+          const idDocumentoFinal = `${selectedCompId}_${nomeFormatado}_${selectedFase}_${dataFormatada}`;
+
+          const refClassificados = doc(db, "classificados", idDocumentoFinal);
+
+          await setDoc(refClassificados, {
+            competicaoId: selectedCompId,
+            categoria: catNome,
+            dataCategoria: selectedCategoriaData,
+            faseOrigem: selectedFase,
+            vagasPorBateria: currentClassificados,
+            totalBaterias: currentNumBaterias,
+            resultadosPorBateria: resultadoFinalPorBateria,
+            status: "PENDENTE",
+            criadoEm: new Date()
+          }, { merge: true });
+        }
+
+        alert(`Etapa finalizada com sucesso! Os classificados de ${categoriasPresentes.join(" e ")} foram salvos separadamente.`);
+
+        selectedCategoriaNome = null;
+        selectedCategoriaData = null;
+
+        await atualizarCategoriasSelect(selectedCompId);
+
+      } catch (err) {
+        console.error("Erro ao salvar classificados finais:", err);
+        jaFinalizouCategoria = false;
+      }
+    }
+    
+    document.getElementById("btnSair").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "./index.html");
+    });
   </script>
 </body>
 </html>
