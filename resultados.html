@@ -119,7 +119,6 @@
     const btnConfig = document.getElementById("btnConfig");
     const btnAdmin = document.getElementById("btnAdmin");
 
-    // Captura o ID da competição caso venha pela URL (ex: resultados.html?compId=XYZ)
     const urlParams = new URLSearchParams(window.location.search);
     const compIdUrl = urlParams.get('compId');
 
@@ -127,7 +126,6 @@
       currentUser = user;
 
       if (!currentUser) {
-        // Se for um visitante público (não logado), esconde botões administrativos do topo
         if (btnConfig) btnConfig.style.display = "none";
         if (btnAdmin) btnAdmin.style.display = "none";
       }
@@ -137,13 +135,10 @@
 
     async function inicializarPagina() {
       if (compIdUrl) {
-        // Se tem ID na URL, busca essa competição diretamente
         await carregarCompeticaoPorId(compIdUrl);
       } else if (currentUser) {
-        // Se está logado e sem ID na URL, carrega as competições do organizador
         await carregarCompeticoesOrganizador();
       } else {
-        // Se for visitante sem ID na URL, busca todas as competições recentes disponíveis
         await carregarTodasCompeticoesPublicas();
       }
     }
@@ -257,12 +252,6 @@
       if (!competicaoAtual) return;
 
       containerResultados.innerHTML = "";
-      const categorias = competicaoAtual.categorias || [];
-
-      if (categorias.length === 0) {
-        containerResultados.innerHTML = `<p style="color: #888; grid-column: 1 / -1;">Nenhuma categoria encontrada para esta competição.</p>`;
-        return;
-      }
 
       let faseBanco = "CLASSIFICACAO";
       let tituloFase = "Classificatórias";
@@ -287,12 +276,36 @@
         console.warn("Erro ao buscar a coleção de trios:", err);
       }
 
-      for (const cat of categorias) {
-        const resultadosCat = triosDocs.filter(i => {
-          const faseTrio = i.fase || "CLASSIFICACAO";
+      // Filtra apenas os trios pertencentes à fase ativa do filtro
+      const triosDaFase = triosDocs.filter(i => {
+        const faseTrio = i.fase || "CLASSIFICACAO";
+        return faseTrio === faseBanco;
+      });
+
+      // Mapeia quais categorias possuem trios cadastrados nesta fase específica
+      let categoriasDaFase = Array.from(new Set(triosDaFase.map(i => i.categoria))).filter(Boolean);
+
+      // Se for a aba Classificatórias e não houver trios ainda, carrega as categorias nativas
+      if (faseAtual === "classificatoria" && categoriasDaFase.length === 0) {
+        const categoriasNativas = competicaoAtual.categorias || [];
+        categoriasDaFase = categoriasNativas.map(c => c.nome);
+      }
+
+      if (categoriasDaFase.length === 0) {
+        containerResultados.innerHTML = `<p style="color: #888; grid-column: 1 / -1;">Nenhum resultado ou categoria cadastrada para a fase: <strong>${tituloFase}</strong>.</p>`;
+        return;
+      }
+
+      for (const nomeCategoria of categoriasDaFase) {
+        const resultadosCat = triosDaFase.filter(i => {
           const tempoOk = (i.status === "OK" && i.tempo !== null && i.tempo !== undefined) || i.status === "SAT" || i.status === "DO";
-          return i.categoria === cat.nome && faseTrio === faseBanco && tempoOk;
+          return i.categoria === nomeCategoria && tempoOk;
         });
+
+        // Se estivermos em Semifinais ou Finais e a categoria não tiver resultados gravados, ignora o card
+        if (faseAtual !== "classificatoria" && resultadosCat.length === 0) {
+          continue;
+        }
 
         resultadosCat.sort((a, b) => {
           if (a.status === "OK" && b.status === "OK") {
@@ -308,6 +321,9 @@
         if (resultadosCat.length === 0) {
           htmlLinhas = `<tr><td colspan="4" class="no-data">Nenhum resultado registrado nesta fase.</td></tr>`;
         } else {
+          // Busca dados da categoria original para regras de limite, se aplicável
+          const catOriginal = (competicaoAtual.categorias || []).find(c => c.nome === nomeCategoria) || {};
+
           resultadosCat.forEach((item, index) => {
             const pos = index + 1;
             let classePos = "";
@@ -323,9 +339,20 @@
 
             if (item.status === "OK" && item.tempo) {
               textoTempo = `${parseFloat(item.tempo).toFixed(2)}s`;
-              const limiteClassificados = cat.classificadosPorBateria || 3;
-              if (pos <= limiteClassificados) {
-                badgeHtml = '<span class="badge-status badge-classificado">Classificado</span>';
+              
+              if (faseAtual === "classificatoria") {
+                const limiteClassificados = catOriginal.classificadosPorBateria || 3;
+                if (pos <= limiteClassificados) {
+                  badgeHtml = '<span class="badge-status badge-classificado">Classificado</span>';
+                }
+              } else if (faseAtual === "semifinal") {
+                if (pos <= 5) { // Top 5 da semifinal avança para a final
+                  badgeHtml = '<span class="badge-status badge-classificado">Classificado</span>';
+                }
+              } else if (faseAtual === "final") {
+                if (pos <= 3) {
+                  badgeHtml = `<span class="badge-status badge-classificado">🏆 ${pos}º Lugar</span>`;
+                }
               }
             } else if (item.status === "SAT") {
               textoTempo = "SAT";
@@ -349,12 +376,15 @@
           });
         }
 
+        const catOriginalObj = (competicaoAtual.categorias || []).find(c => c.nome === nomeCategoria);
+        const simbolaFeminino = catOriginalObj && catOriginalObj.isFeminino ? ' ♀️' : '';
+
         const cardCat = document.createElement("div");
         cardCat.className = "card-categoria";
 
         cardCat.innerHTML = `
           <div class="card-categoria-header">
-            <h3>${cat.nome} ${cat.isFeminino ? '♀️' : ''}</h3>
+            <h3>${nomeCategoria}${simbolaFeminino}</h3>
             <span style="font-size: 0.75rem; color: #888;">${tituloFase}</span>
           </div>
           <table class="tabela-resultados">
@@ -373,6 +403,11 @@
         `;
 
         containerResultados.appendChild(cardCat);
+      }
+
+      // Se após o loop nenhum card tiver sido adicionado (ex: aba sem corridas)
+      if (containerResultados.children.length === 0) {
+        containerResultados.innerHTML = `<p style="color: #888; grid-column: 1 / -1;">Nenhum resultado registrado para a fase: <strong>${tituloFase}</strong>.</p>`;
       }
     }
   </script>
