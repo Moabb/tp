@@ -225,6 +225,17 @@
       signOut 
     } from "./firebase-config.js";
 
+    // Função de Sanitização para Prevenção de XSS
+    function escapeHTML(str) {
+      if (typeof str !== 'string') return str;
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     let currentUser = null;
     let modoEdicaoId = null;
     let competicoesCache = {};
@@ -255,11 +266,11 @@
         <div class="grid-cat-inputs">
           <div class="form-group" style="margin:0;">
             <label>Nome Categoria</label>
-            <input type="text" class="cat-nome" placeholder="Ex: Soma 3" value="${nome}" required>
+            <input type="text" class="cat-nome" placeholder="Ex: Soma 3" value="${escapeHTML(nome)}" required>
           </div>
           <div class="form-group" style="margin:0;">
             <label>Data Prova</label>
-            <input type="date" class="cat-data" value="${dataPadrao}" required>
+            <input type="date" class="cat-data" value="${escapeHTML(dataPadrao)}" required>
           </div>
           <div class="form-group" style="margin:0;">
             <label>Nº Baterias</label>
@@ -448,8 +459,8 @@
             itemHist.className = "card-historico-item";
             itemHist.innerHTML = `
               <div>
-                <h4>🏆 ${comp.nome}</h4>
-                <p>Data Início: ${comp.dataInicio}</p>
+                <h4>🏆 ${escapeHTML(comp.nome)}</h4>
+                <p>Data Início: ${escapeHTML(comp.dataInicio)}</p>
               </div>
               <button class="btn-ver-resultados">📊 Ver Resultados</button>
             `;
@@ -466,25 +477,25 @@
           card.className = "card-prova-item";
           
           const detalhesCat = comp.categorias && comp.categorias.length > 0
-            ? comp.categorias.map(c => `${c.nome}${c.isFeminino ? ' (♀️ Fem)' : ''} (${c.qtdBaterias || 2} Bat / ${c.limiteGado || 25} Lote / ${c.classificadosPorBateria || 3} Class)`).join(" | ")
+            ? comp.categorias.map(c => `${escapeHTML(c.nome)}${c.isFeminino ? ' (♀️ Fem)' : ''} (${c.qtdBaterias || 2} Bat / ${c.limiteGado || 25} Lote / ${c.classificadosPorBateria || 3} Class)`).join(" | ")
             : "Nenhuma categoria";
 
           let optionsCategorias = `<option value="">Selecione...</option>`;
           if (comp.categorias && comp.categorias.length > 0) {
             comp.categorias.forEach((cat) => {
-              optionsCategorias += `<option value="${cat.nome}">${cat.nome}${cat.isFeminino ? ' (♀️ Fem)' : ''}</option>`;
+              optionsCategorias += `<option value="${escapeHTML(cat.nome)}">${escapeHTML(cat.nome)}${cat.isFeminino ? ' (♀️ Fem)' : ''}</option>`;
             });
           }
 
           const infoVinculo = comp.vinculoEmbutido 
-            ? `<p style="font-size:0.8rem; color:#2a9d8f; margin-top:5px;"><strong>Vínculo Ativo:</strong> ${comp.vinculoEmbutido.catPai} ➔ ${comp.vinculoEmbutido.catEspelho}</p>`
+            ? `<p style="font-size:0.8rem; color:#2a9d8f; margin-top:5px;"><strong>Vínculo Ativo:</strong> ${escapeHTML(comp.vinculoEmbutido.catPai)} ➔ ${escapeHTML(comp.vinculoEmbutido.catEspelho)}</p>`
             : '';
 
           card.innerHTML = `
             <div class="top-info">
               <div class="info">
-                <h3>${comp.nome}</h3>
-                <p>Início: ${comp.dataInicio} | Categorias: ${detalhesCat}</p>
+                <h3>${escapeHTML(comp.nome)}</h3>
+                <p>Início: ${escapeHTML(comp.dataInicio)} | Categorias: ${detalhesCat}</p>
               </div>
               <div class="acoes">
                 <button class="btn-action btnEditar" data-id="${compId}">✏️ Editar / Regulamento</button>
@@ -603,8 +614,8 @@
         item.innerHTML = `
           <input type="checkbox" class="chk-comp-item" value="${compId}">
           <div>
-            <strong style="color:#fff; display:block;">${comp.nome} ${comp.status === "FINALIZADA" ? "(FINALIZADA)" : ""}</strong>
-            <span style="font-size:0.75rem; color:#aaa;">Início: ${comp.dataInicio}</span>
+            <strong style="color:#fff; display:block;">${escapeHTML(comp.nome)} ${comp.status === "FINALIZADA" ? "(FINALIZADA)" : ""}</strong>
+            <span style="font-size:0.75rem; color:#aaa;">Início: ${escapeHTML(comp.dataInicio)}</span>
           </div>
         `;
         listaExcluirCheckboxes.appendChild(item);
